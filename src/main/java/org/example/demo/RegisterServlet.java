@@ -45,7 +45,7 @@ public class RegisterServlet extends HttpServlet {
                 if (rowsInserted > 0) {
                     HttpSession session = request.getSession();
                     session.setAttribute("username", username);
-                    response.sendRedirect("dashboard.jsp");
+                    response.sendRedirect("index.jsp");
                 } else {
                     showError(request, response, "Registration failed. Please try again.");
                 }

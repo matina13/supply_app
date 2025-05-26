@@ -1,11 +1,32 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-if (session == null) response.sendRedirect("/");
-else {
-    if (session.getAttribute("role") == null) response.sendRedirect("/");
-    else if (!session.getAttribute("role").equals("user") && !session.getAttribute("role").equals("plus")) response.sendRedirect("/");
-}
+    if (session == null || session.getAttribute("role") == null ||
+            (!session.getAttribute("role").equals("user") && !session.getAttribute("role").equals("plus"))) {
+        response.sendRedirect("index.jsp");
+        return;
+    }
+    String username = (String) session.getAttribute("username");
+    String role = (String) session.getAttribute("role");
 %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="css/dashboard.css">
+</head>
+<body>
+<div class="topbar">
+    <div class="title">Welcome, <%= username %></div>
+    <div class="nav">
+        <a href="LogoutServlet">Logout</a>
+    </div>
+</div>
 
-hello
-<br>
-<a href="app.jsp">App</a>
+<div class="content">
+    <h2>Dashboard</h2>
+    <p>
+        User dashboard
+    </p>
+</div>
+</body>
+</html>
