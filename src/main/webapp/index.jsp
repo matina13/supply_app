@@ -1,4 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
+<%
+ if (session != null) org.example.demo.LoginServlet.alreadyLoggedIn(request, response, session);
+%>
+
 <!DOCTYPE html>
 <html>
 <head>

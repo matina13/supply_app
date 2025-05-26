@@ -66,6 +66,13 @@
             <version>9.3.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+
+        <!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-websocket -->
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-websocket</artifactId>
+            <version>11.0.7</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -92,5 +99,7 @@
 
 
         </plugins>
+
+        <finalName>ROOT</finalName>
     </build>
 </project>

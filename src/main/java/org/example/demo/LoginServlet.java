@@ -24,17 +24,26 @@ public class LoginServlet extends HttpServlet {
         }
 
         try (Connection conn = DBUtil.getConnection()) {
-            String sql = "SELECT username, password FROM users WHERE email = ?";
+            String sql = "SELECT username, password, role FROM users WHERE email = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, email);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         String storedHash = rs.getString("password");
                         if (BCrypt.checkpw(password, storedHash)) {
-                            // Successful login
-                            HttpSession session = request.getSession();
-                            session.setAttribute("username", rs.getString("username"));
-                            response.sendRedirect("dashboard.jsp");
+                            if (rs.getString("role").equals("user") || rs.getString("role").equals("plus")) {
+                                // User login
+                                HttpSession session = request.getSession();
+                                session.setAttribute("username", rs.getString("username"));
+                                session.setAttribute("role", rs.getString("role"));
+                                response.sendRedirect("dashboard.jsp");
+                            } else if (rs.getString("role").equals("admin")) {
+                                // Admin login
+                                HttpSession session = request.getSession();
+                                session.setAttribute("username", rs.getString("username"));
+                                session.setAttribute("role", "admin");
+                                response.sendRedirect("adminDashboard.jsp");
+                            }
                         } else {
                             showError(request, response, "Incorrect password.");
                         }
@@ -54,5 +63,14 @@ public class LoginServlet extends HttpServlet {
         request.setAttribute("error", message);
         request.setAttribute("email", request.getParameter("email")); // Keep email in form
         request.getRequestDispatcher("index.jsp").forward(request, response);
+    }
+
+    public static void alreadyLoggedIn(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
+        try {
+            if (session.getAttribute("role").equals("user") || session.getAttribute("role").equals("plus")) response.sendRedirect("dashboard.jsp");
+            else if (session.getAttribute("role").equals("admin")) response.sendRedirect("adminDashboard.jsp");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
