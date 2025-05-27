@@ -12,12 +12,14 @@
 <html>
 <head>
     <title>Dashboard</title>
+     <script src="javascripts/dashboard.js"></script>
     <link rel="stylesheet" type="text/css" href="css/dashboard.css">
 </head>
 <body>
 <div class="topbar">
     <div class="title">Welcome, <%= username %></div>
     <div class="nav">
+        <p id="date"></p>
         <a href="LogoutServlet">Logout</a>
     </div>
 </div>

@@ -3,10 +3,8 @@ package org.example.demo;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
@@ -174,6 +172,16 @@ public class UserManagementServlet extends HttpServlet {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 request.setAttribute("success", "User added successfully");
+
+                int id = DBUtil.getRegisteredUserId(conn, email);
+                if (id != -1) {
+                    String sql2 = "INSERT INTO UserData (user_id, money, last_date) VALUES (?, ?, ?)";
+                    PreparedStatement stmt2 = conn.prepareStatement(sql2);
+                    stmt2.setInt(1, id);
+                    stmt2.setInt(2, 10000);
+                    stmt2.setDate(3, Date.valueOf(LocalDate.of(2025,5,1)));
+                    stmt2.executeUpdate();
+                }
             } else {
                 request.setAttribute("error", "Failed to add user");
             }
@@ -306,4 +314,5 @@ public class UserManagementServlet extends HttpServlet {
 
         getAllUsers(request, response);
     }
+
 }

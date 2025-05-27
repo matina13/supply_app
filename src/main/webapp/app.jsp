@@ -3,7 +3,7 @@
     <title>Apache Tomcat WebSocket Examples: Chat</title>
 
     <script type="text/javascript">
-        var Chat = {};
+    var Chat = {};
 
     Chat.socket = null;
 

@@ -4,6 +4,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDate;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -43,6 +44,16 @@ public class RegisterServlet extends HttpServlet {
                 int rowsInserted = stmt.executeUpdate();
 
                 if (rowsInserted > 0) {
+                    int id = DBUtil.getRegisteredUserId(conn, email);
+                    if (id != -1) {
+                        String sql2 = "INSERT INTO UserData (user_id, money, last_date) VALUES (?, ?, ?)";
+                        PreparedStatement stmt2 = conn.prepareStatement(sql2);
+                        stmt2.setInt(1, id);
+                        stmt2.setInt(2, 10000);
+                        stmt2.setDate(3, Date.valueOf(LocalDate.of(2025,5,1)));
+                        stmt2.executeUpdate();
+                    }
+
                     HttpSession session = request.getSession();
                     session.setAttribute("username", username);
                     response.sendRedirect("index.jsp");
@@ -71,4 +82,5 @@ public class RegisterServlet extends HttpServlet {
         request.setAttribute("error", message);
         request.getRequestDispatcher("index.jsp").forward(request, response);
     }
+
 }

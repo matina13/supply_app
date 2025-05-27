@@ -1,8 +1,6 @@
 package org.example.demo;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class DBUtil {
     private static final String URL = "jdbc:mysql://localhost:3306/supply_app_db?allowPublicKeyRetrieval=true&useSSL=false";
@@ -23,5 +21,22 @@ public class DBUtil {
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
+    }
+
+    public static int getRegisteredUserId(Connection conn, String email) {
+        try {
+            String sql = "SELECT id FROM users WHERE email = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+
+            int id;
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return -1;
     }
 }

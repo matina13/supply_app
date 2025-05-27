@@ -1,9 +1,7 @@
-package org.example.demo;
+package org.example.demo.supplyChain;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,10 +12,10 @@ import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 
 @ServerEndpoint(value = "/appSocket")
-public class appWebSocket {
+public class AppWebSocket {
     private static final String GUEST_PREFIX = "Guest";
     private static final AtomicInteger connectionIds = new AtomicInteger(0);
-    private static final Set<appWebSocket> connections = new CopyOnWriteArraySet<>();
+    private static final Set<AppWebSocket> connections = new CopyOnWriteArraySet<>();
 
     private Queue<String> messageBacklog = new ArrayDeque<>();
     private boolean messageInProgress = false;
@@ -25,15 +23,20 @@ public class appWebSocket {
     //private final String nickname;
     private Session session;
 
+    private TimeSimulator timeSim;
+
     @OnOpen
     public void start(Session session) {
         this.session = session;
         connections.add(this);
-        broadcast("Successfully connected.");
+        //broadcast("Successfully connected.");
+
+        startTimeSimulation();
     }
 
     @OnClose
     public void end() {
+        this.timeSim.stop();
         connections.remove(this);
     }
 
@@ -70,7 +73,7 @@ public class appWebSocket {
     }
 
     private static void broadcast(String msg) {
-        for (appWebSocket client : connections) {
+        for (AppWebSocket client : connections) {
             try {
                 client.sendMessage(msg);
             } catch (IOException e) {
@@ -86,6 +89,21 @@ public class appWebSocket {
                 }
             }
         }
+    }
+
+    private void startTimeSimulation() {
+        this.timeSim = new TimeSimulator();
+        this.timeSim.init();
+
+        Timer ta = new Timer();
+
+        ta.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                timeSim.incrementDate();
+                broadcast(timeSim.getDate());
+            }
+        }, 0, 1000); // every 1 second
     }
 
 }
