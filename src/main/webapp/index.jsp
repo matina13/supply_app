@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
- if (session != null) org.example.demo.LoginServlet.alreadyLoggedIn(request, response, session);
+ if (session != null && session.getAttribute("role") != null) org.example.demo.LoginServlet.alreadyLoggedIn(request, response, session);
 %>
 
 <!DOCTYPE html>

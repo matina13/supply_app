@@ -1,15 +1,17 @@
 package org.example.demo.supplyChain;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.websocket.OnClose;
-import jakarta.websocket.OnError;
-import jakarta.websocket.OnOpen;
-import jakarta.websocket.Session;
+import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
+import org.example.demo.DBUtil;
+
+import com.google.gson.*;
+import org.example.demo.structs.Json;
 
 @ServerEndpoint(value = "/appSocket")
 public class AppWebSocket {
@@ -24,25 +26,42 @@ public class AppWebSocket {
     private Session session;
 
     private TimeSimulator timeSim;
+    private Timer t;
+    private int user_id;
+    private DataGetter dataGetter;
 
     @OnOpen
     public void start(Session session) {
         this.session = session;
         connections.add(this);
+        this.dataGetter = new DataGetter();
+        //this.jsonArray = new JsonArray();
+        //JSONObj
         //broadcast("Successfully connected.");
-
-        startTimeSimulation();
     }
 
     @OnClose
     public void end() {
-        this.timeSim.stop();
+        stopTimeSimulation();
+        this.timeSim.saveDate();
         connections.remove(this);
     }
 
     @OnError
     public void onError(Throwable t) throws Throwable {
-        //log.error("Chat Error: " + t.toString(), t);
+        System.out.println("Websocket error: " + t.getMessage());
+        t.printStackTrace();
+    }
+
+    @OnMessage
+    public void incoming(String message) {
+        try {
+            String email = message;
+            this.user_id = DBUtil.getRegisteredUserId(DBUtil.getConnection(), email);
+            startTimeSimulation(this.user_id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sendMessage(String msg) throws IOException {
@@ -91,19 +110,28 @@ public class AppWebSocket {
         }
     }
 
-    private void startTimeSimulation() {
+    private void startTimeSimulation(int user_id) {
         this.timeSim = new TimeSimulator();
-        this.timeSim.init();
+        this.timeSim.init(user_id);
 
-        Timer ta = new Timer();
+        this.t = new Timer();
 
-        ta.schedule(new TimerTask() {
+
+        this.t.schedule(new TimerTask() {
             @Override
             public void run() {
                 timeSim.incrementDate();
-                broadcast(timeSim.getDate());
+
+                Gson g = new Gson();
+                String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataGetter.getInventory(user_id)));
+
+                broadcast(json);
             }
         }, 0, 1000); // every 1 second
+    }
+
+    private void stopTimeSimulation() {
+        this.t.cancel();
     }
 
 }

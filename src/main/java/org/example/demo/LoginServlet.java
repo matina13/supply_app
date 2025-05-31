@@ -35,6 +35,7 @@ public class LoginServlet extends HttpServlet {
                                 // User login
                                 HttpSession session = request.getSession();
                                 session.setAttribute("username", rs.getString("username"));
+                                session.setAttribute("email", email);
                                 session.setAttribute("role", rs.getString("role"));
                                 response.sendRedirect("dashboard.jsp");
                             } else if (rs.getString("role").equals("admin")) {
@@ -65,7 +66,7 @@ public class LoginServlet extends HttpServlet {
         request.getRequestDispatcher("index.jsp").forward(request, response);
     }
 
-    public static void alreadyLoggedIn(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
+    public static void alreadyLoggedIn(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
         try {
             if (session.getAttribute("role").equals("user") || session.getAttribute("role").equals("plus")) response.sendRedirect("dashboard.jsp");
             else if (session.getAttribute("role").equals("admin")) response.sendRedirect("adminDashboard.jsp");
