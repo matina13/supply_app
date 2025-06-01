@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import org.example.demo.structs.*;
 
 public class DataGetter {
+
     public InventoryWrapper getInventory(int user_id) {
         ArrayList<Inventory> inventory = new ArrayList<Inventory>();
         try {
@@ -19,19 +20,34 @@ public class DataGetter {
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, user_id);
             ResultSet rs = stmt.executeQuery();
+
             while (rs.next()) {
-                int id;
-                try {
-                    id = rs.getInt("material_id");
-                } catch (SQLException e) {
-                    id = rs.getInt("producableGoodId");
-                }
-                int quantity = rs.getInt("quantity");
+                int id = 0;
                 String type = rs.getString("type");
-                inventory.add(new Inventory(id, quantity, getMaterialOrGoodName(type, id)));
+
+                // More robust way to get the correct ID based on type
+                if ("material".equals(type)) {
+                    id = rs.getInt("material_id");
+                } else if ("good".equals(type)) {
+                    id = rs.getInt("producableGoodId");
+                } else {
+                    // Handle unknown type - log warning and skip
+                    System.out.println("Warning: Unknown inventory type: " + type);
+                    continue;
+                }
+
+                int quantity = rs.getInt("quantity");
+                String name = getMaterialOrGoodName(type, id);
+
+                // Only add if we got a valid name
+                if (name != null && !name.isEmpty()) {
+                    inventory.add(new Inventory(id, quantity, name, type));
+                }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error fetching inventory for user " + user_id + ": " + e.getMessage());
+            e.printStackTrace();
+            // Return empty inventory instead of crashing
         }
 
         return new InventoryWrapper(inventory);
@@ -43,13 +59,15 @@ public class DataGetter {
             String sql = "SELECT * FROM ProducableGoods";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
+
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
                 goods.add(new ProducableGood(id, name));
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error fetching producable goods: " + e.getMessage());
+            e.printStackTrace();
         }
         return goods;
     }
@@ -58,37 +76,55 @@ public class DataGetter {
         String name = "";
         try {
             String sql = "";
-            if (type.equals("material")) sql = "SELECT name FROM Materials WHERE material_id = ?";
-            else if (type.equals("good")) sql = "SELECT name FROM ProducableGoods WHERE producableGoodId = ?";
+            if ("material".equals(type)) {
+                sql = "SELECT name FROM Materials WHERE material_id = ?";
+            } else if ("good".equals(type)) {
+                sql = "SELECT name FROM ProducableGoods WHERE producableGoodId = ?";
+            } else {
+                System.out.println("Warning: Unknown type for name lookup: " + type);
+                return "Unknown Item";
+            }
+
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
+
+            if (rs.next()) {
                 name = rs.getString("name");
+            } else {
+                System.out.println("Warning: No name found for " + type + " with id: " + id);
+                name = "Unknown " + type;
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error getting name for " + type + " with id " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return "Error Loading Name";
         }
         return name;
     }
 
-    public class InventoryWrapper {
-        ArrayList<Inventory> inventory;
+    public static class InventoryWrapper {
+        private ArrayList<Inventory> inventory;
 
         public InventoryWrapper(ArrayList<Inventory> inv) {
-            //this.inventory = inv;
-            //Gson g = new Gson();
-            //this.inventory = g.toJsonTree(inv).getAsJsonArray();
-            this.inventory = inv;
+            this.inventory = inv != null ? inv : new ArrayList<>();
+        }
+
+        public ArrayList<Inventory> getInventory() {
+            return inventory;
         }
 
         public JsonArray getInventoryAsJson() {
             Gson g = new Gson();
-            JsonArray json = g.toJsonTree(this.inventory).getAsJsonArray();
-            return json;
+            return g.toJsonTree(this.inventory).getAsJsonArray();
         }
 
+        public int getTotalItems() {
+            return inventory.size();
+        }
+
+        public int getTotalQuantity() {
+            return inventory.stream().mapToInt(Inventory::getQuantity).sum();
+        }
     }
 }
-
-

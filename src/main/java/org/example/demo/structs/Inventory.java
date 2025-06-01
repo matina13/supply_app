@@ -5,7 +5,7 @@ public class Inventory {
     private int quantity;
     private String name;
 
-    public Inventory(int id, int quantity, String name) {
+    public Inventory(int id, int quantity, String name, String type) {
         this.id = id;
         this.quantity = quantity;
         this.name = name;
