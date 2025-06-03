@@ -1,6 +1,9 @@
 package org.example.demo.supplyChain;
 
+import com.google.gson.Gson;
 import org.example.demo.DBUtil;
+import org.example.demo.structs.Json;
+import org.example.demo.supplyChain.Transaction.BuyMaterial;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,14 +13,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.sql.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import java.time.LocalDate;
 
 public class TimeSimulator {
     private LocalDate date;
-    private Timer t = new Timer();
     private Connection db;
     private int user_id;
     private int money;
@@ -51,12 +51,12 @@ public class TimeSimulator {
         this.date = this.date.plusDays(1);
     }
     
-    public void stop() {
-        this.t.cancel();
-    }
-    
     public String getDate() {
         return this.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    }
+
+    public LocalDate getLocalDateObject() {
+        return this.date;
     }
 
     public int getMoney() {
@@ -86,5 +86,4 @@ public class TimeSimulator {
             throw new RuntimeException(e);
         }
     }
-
 }

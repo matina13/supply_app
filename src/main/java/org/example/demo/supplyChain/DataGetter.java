@@ -1,9 +1,8 @@
 package org.example.demo.supplyChain;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import org.example.demo.DBUtil;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +12,7 @@ import org.example.demo.structs.*;
 
 public class DataGetter {
 
-    public InventoryWrapper getInventory(int user_id) {
+    public ArrayList<Inventory> getInventory(int user_id) {
         ArrayList<Inventory> inventory = new ArrayList<Inventory>();
         try {
             String sql = "SELECT material_id, producableGoodId, quantity, type FROM ProducerInventory WHERE user_id = ?";
@@ -50,10 +49,11 @@ public class DataGetter {
             // Return empty inventory instead of crashing
         }
 
-        return new InventoryWrapper(inventory);
+        //return new InventoryWrapper(inventory);
+        return inventory;
     }
 
-    public ArrayList<ProducableGood> getProducableGoods() {
+    public static ArrayList<ProducableGood> getProducableGoods() {
         ArrayList<ProducableGood> goods = new ArrayList<ProducableGood>();
         try {
             String sql = "SELECT * FROM ProducableGoods";
@@ -61,7 +61,7 @@ public class DataGetter {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                int id = rs.getInt("id");
+                int id = rs.getInt("producableGoodId");
                 String name = rs.getString("name");
                 goods.add(new ProducableGood(id, name));
             }
@@ -70,6 +70,45 @@ public class DataGetter {
             e.printStackTrace();
         }
         return goods;
+    }
+
+    public ArrayList<Supplier> getSuppliersThatSellMaterial(int material_id) {
+        ArrayList<Supplier> suppliers = new ArrayList<Supplier>();
+        try {
+            String sql = "SELECT supplier_id, quantity FROM SuppliersInventory WHERE material_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, material_id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int supplier_id = rs.getInt("supplier_id");
+                int price = getSupplierSellPrice(supplier_id, material_id);
+                int quantity = rs.getInt("quantity");
+                suppliers.add(new Supplier(supplier_id, material_id, price, quantity));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return suppliers;
+    }
+
+    private int getSupplierSellPrice(int supplier_id, int material_id) {
+        try {
+            String sql = "SELECT price FROM SuppliersSellPrice WHERE supplier_id = ? AND material_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, supplier_id);
+            stmt.setInt(2, material_id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("price");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 404040404; //should not happen
     }
 
     public String getMaterialOrGoodName(String type, int id) {
@@ -103,28 +142,28 @@ public class DataGetter {
         return name;
     }
 
-    public static class InventoryWrapper {
-        private ArrayList<Inventory> inventory;
+    public ArrayList<Transaction> getTransactions(int user_id) {
+        ArrayList<Transaction> transactions = new ArrayList<Transaction>();
+        try {
+            String sql = "SELECT * FROM Transactions WHERE user_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            ResultSet rs = stmt.executeQuery();
 
-        public InventoryWrapper(ArrayList<Inventory> inv) {
-            this.inventory = inv != null ? inv : new ArrayList<>();
-        }
+            while (rs.next()) {
+                int transaction_id = rs.getInt("transaction_id");
+                String type = rs.getString("type");
+                int order_id = rs.getInt("order_id");
+                int supplier_id = rs.getInt("supplier_id");
+                int buyer_id = rs.getInt("buyer_id");
+                Date date_finished = rs.getDate("date_finished");
+                transactions.add(new Transaction(transaction_id, type, order_id, supplier_id, buyer_id, date_finished));
+            }
 
-        public ArrayList<Inventory> getInventory() {
-            return inventory;
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        public JsonArray getInventoryAsJson() {
-            Gson g = new Gson();
-            return g.toJsonTree(this.inventory).getAsJsonArray();
-        }
-
-        public int getTotalItems() {
-            return inventory.size();
-        }
-
-        public int getTotalQuantity() {
-            return inventory.stream().mapToInt(Inventory::getQuantity).sum();
-        }
+        return transactions;
     }
 }

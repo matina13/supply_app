@@ -36,12 +36,45 @@
 
     <p>Inventory:</p>
     <table id="inventoryTable">
-    <tr>
       <th>Name</th>
       <th>Quantity</th>
     </tr>
     </table>
+    <br>
     <p>Producable goods:</p>
+    <table>
+    <tr>
+      <th>Name</th>
+    </tr>
+      <% java.util.ArrayList<org.example.demo.structs.ProducableGood> pgList = org.example.demo.supplyChain.DataGetter.getProducableGoods();%>
+          <% for (org.example.demo.structs.ProducableGood pg : pgList) { %>
+          <tr><td><%= pg.getName() %></td></tr>
+          <% } %>
+    </table>
+
+    <br><br><br><p>For testing:</p>
+    <label for="prodGoods">Producable goods:</label>
+    <select id="prodGoods">
+      <% //java.util.ArrayList<org.example.demo.structs.ProducableGood> pgList = org.example.demo.supplyChain.DataGetter.getProducableGoods();%>
+          <% for (org.example.demo.structs.ProducableGood pg : pgList) { %>
+          <option value=<%= pg.getId() %>><%= pg.getName() %></option>
+          <% } %>
+    </select>
+
+    <button onclick=getSuppliers()>Click</button>
+
+    <br>
+    <p>Suppliers selling X:</p> //on X get name of the material
+    <table id="suppliersTable">
+        <th>Supplier</th>
+        <th>Price</th>
+        <th>Quantity available</th>
+    </tr>
+    </table>
+    <br>
+    //Quantity to buy box<br> //check in js if input quantity to buy <= quantity of item supplies has<br>
+    <button onclick=buyMaterial()>Buy</button>
+
 </div>
 </body>
 </html>

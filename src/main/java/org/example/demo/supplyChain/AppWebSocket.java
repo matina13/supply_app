@@ -11,6 +11,7 @@ import jakarta.websocket.server.ServerEndpoint;
 import org.example.demo.DBUtil;
 
 import com.google.gson.*;
+import org.example.demo.supplyChain.Transaction.BuyMaterial;
 import org.example.demo.structs.Json;
 
 @ServerEndpoint(value = "/appSocket")
@@ -29,14 +30,13 @@ public class AppWebSocket {
     private Timer t;
     private int user_id;
     private DataGetter dataGetter;
+    private HashMap<String, Object> dataToBeSent = new HashMap<String, Object>();
 
     @OnOpen
     public void start(Session session) {
         this.session = session;
         connections.add(this);
         this.dataGetter = new DataGetter();
-        //this.jsonArray = new JsonArray();
-        //JSONObj
         //broadcast("Successfully connected.");
     }
 
@@ -55,12 +55,10 @@ public class AppWebSocket {
 
     @OnMessage
     public void incoming(String message) {
-        try {
-            String email = message;
-            this.user_id = DBUtil.getRegisteredUserId(DBUtil.getConnection(), email);
-            startTimeSimulation(this.user_id);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        JsonArray messageJson = JsonParser.parseString(message).getAsJsonArray();
+        for (JsonElement j : messageJson) {
+            JsonObject obj = j.getAsJsonObject();
+            cases(obj);
         }
     }
 
@@ -116,14 +114,15 @@ public class AppWebSocket {
 
         this.t = new Timer();
 
-
         this.t.schedule(new TimerTask() {
             @Override
             public void run() {
                 timeSim.incrementDate();
 
                 Gson g = new Gson();
-                String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataGetter.getInventory(user_id)));
+
+                dataToBeSent.put("inventory", dataGetter.getInventory(user_id));
+                String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
                 broadcast(json);
             }
@@ -132,6 +131,29 @@ public class AppWebSocket {
 
     private void stopTimeSimulation() {
         this.t.cancel();
+    }
+
+    private void cases(JsonObject j) {
+        if (j.get("email") != null) {
+            try {
+                String email = j.get("email").getAsString();
+                this.user_id = DBUtil.getRegisteredUserId(DBUtil.getConnection(), email);
+                startTimeSimulation(this.user_id);
+            } catch (SQLException e) {
+                System.err.println("Error: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        else if (j.get("material_id") != null) {
+            String material_id_string = j.get("material_id").getAsString();
+            int material_id = Integer.parseInt(material_id_string);
+            this.dataToBeSent.put("suppliers", dataGetter.getSuppliersThatSellMaterial(material_id));
+        }
+        else if (j.get("buy_material") != null) {
+            BuyMaterial buyMaterials = new Gson().fromJson(j.get("buy_material"), BuyMaterial.class);
+            buyMaterials.buy(this.user_id, this.timeSim);
+        }
+
     }
 
 }

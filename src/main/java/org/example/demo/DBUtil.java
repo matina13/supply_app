@@ -40,12 +40,12 @@ public class DBUtil {
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
 
-            int id;
             if (rs.next()) {
                 return rs.getInt("id");
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
         return -1;
     }
