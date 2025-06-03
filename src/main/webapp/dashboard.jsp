@@ -75,6 +75,9 @@
     //Quantity to buy box<br> //check in js if input quantity to buy <= quantity of item supplies has<br>
     <button onclick=buyMaterial()>Buy</button>
 
+    <br><br><br>
+    <button onclick=produceGood()>Produce Bike</button>
+
 </div>
 </body>
 </html>

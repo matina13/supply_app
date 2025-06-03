@@ -166,4 +166,26 @@ public class DataGetter {
         }
         return transactions;
     }
+
+    public ArrayList<Order> getOrders(int order_id) {
+        ArrayList<Order> orders = new ArrayList<Order>();
+        try {
+            String sql = "SELECT * FROM Orders WHERE order_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, order_id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int material_id = rs.getInt("material_id");
+                int quantity = rs.getInt("quantity");
+                orders.add(new Order(order_id, material_id, quantity));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return orders;
+    }
+
 }

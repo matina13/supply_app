@@ -13,6 +13,7 @@ import org.example.demo.DBUtil;
 import com.google.gson.*;
 import org.example.demo.supplyChain.Transaction.BuyMaterial;
 import org.example.demo.structs.Json;
+import org.example.demo.supplyChain.Transaction.Produce;
 
 @ServerEndpoint(value = "/appSocket")
 public class AppWebSocket {
@@ -152,6 +153,10 @@ public class AppWebSocket {
         else if (j.get("buy_material") != null) {
             BuyMaterial buyMaterials = new Gson().fromJson(j.get("buy_material"), BuyMaterial.class);
             buyMaterials.buy(this.user_id, this.timeSim);
+        }
+        else if (j.get("produce_good") != null) {
+            Produce produce = new Gson().fromJson(j.get("produce_good"), Produce.class);
+            produce.produce(this.user_id, this.timeSim);
         }
 
     }

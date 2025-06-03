@@ -1,6 +1,7 @@
 package org.example.demo.supplyChain.Transaction;
 
 import org.example.demo.DBUtil;
+import org.example.demo.structs.DoneObject;
 import org.example.demo.supplyChain.TimeSimulator;
 
 import java.sql.Date;
@@ -246,18 +247,4 @@ public class BuyMaterial {
         }, 0, 1000); // every 1 second
     }
 
-    private class DoneObject {
-        private boolean done;
-        public DoneObject(boolean bool) {
-            this.done = bool;
-        }
-
-        public void setDone(boolean done) {
-            this.done = done;
-        }
-
-        public boolean getDone() {
-            return this.done;
-        }
-    }
 }

@@ -142,3 +142,11 @@ function buyMaterial() {
     const json = [{"buy_material": {"supplier_id": supplier_id, "material_id": material_id, "quantity": quantity}}];
     webSocket.Socket.send(JSON.stringify(json));
 }
+
+function produceGood() {
+    const producableGoodId = 1;
+    const quantityToProduce = 1;
+
+    const json = [{"produce_good": {"producableGoodId": producableGoodId, "quantityToProduce": quantityToProduce}}]
+    webSocket.Socket.send(JSON.stringify(json));
+}
