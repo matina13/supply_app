@@ -126,25 +126,28 @@ public class Produce {
 
     private void addProducedGoodToInventory(int user_id) {
         try {
-            String sql = "SELECT producableGoodId FROM ProducerInventory WHERE user_id = ?";
+            String sql = "SELECT MAX(producableGoodId) FROM ProducerInventory WHERE user_id = ?";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, user_id);
             ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) { //if produced good exists in the table
-                String sql2 = "UPDATE ProducerInventory SET quantity = quantity + 1 WHERE producableGoodId = ? AND user_id = ?";
-                PreparedStatement stmt2 = DBUtil.getConnection().prepareStatement(sql2);
-                stmt2.setInt(1, producableGoodId);
-                stmt2.setInt(2, user_id);
-                stmt2.executeUpdate();
-            }
-            else { //if produced good doesn't exist in the table
+            int exists = 0;
+            if (rs.next()) exists = rs.getInt("MAX(producableGoodId)");
+
+            if (exists == 0) { //doesn't exist
                 String sql2 = "INSERT INTO ProducerInventory (user_id, producableGoodId, quantity, type) VALUES (?, ?, ?, ?) ";
                 PreparedStatement stmt2 = DBUtil.getConnection().prepareStatement(sql2);
                 stmt2.setInt(1, user_id);
                 stmt2.setInt(2, producableGoodId);
                 stmt2.setInt(3, 1);
                 stmt2.setString(4, "good");
+                stmt2.executeUpdate();
+            }
+            else if (exists != 0) { //exists
+                String sql2 = "UPDATE ProducerInventory SET quantity = quantity + 1 WHERE producableGoodId = ? AND user_id = ?";
+                PreparedStatement stmt2 = DBUtil.getConnection().prepareStatement(sql2);
+                stmt2.setInt(1, producableGoodId);
+                stmt2.setInt(2, user_id);
                 stmt2.executeUpdate();
             }
 

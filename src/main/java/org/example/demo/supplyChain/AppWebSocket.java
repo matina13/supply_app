@@ -11,6 +11,8 @@ import jakarta.websocket.server.ServerEndpoint;
 import org.example.demo.DBUtil;
 
 import com.google.gson.*;
+import org.example.demo.structs.Supplier;
+import org.example.demo.structs.SupplierMaterialInfo;
 import org.example.demo.supplyChain.Transaction.BuyMaterial;
 import org.example.demo.structs.Json;
 import org.example.demo.supplyChain.Transaction.Produce;
@@ -32,13 +34,14 @@ public class AppWebSocket {
     private int user_id;
     private DataGetter dataGetter;
     private HashMap<String, Object> dataToBeSent = new HashMap<String, Object>();
+    private RandomnessSimulator randSim;
 
     @OnOpen
     public void start(Session session) {
         this.session = session;
         connections.add(this);
         this.dataGetter = new DataGetter();
-        //broadcast("Successfully connected.");
+        this.randSim = new RandomnessSimulator();
     }
 
     @OnClose
@@ -116,9 +119,15 @@ public class AppWebSocket {
         this.t = new Timer();
 
         this.t.schedule(new TimerTask() {
+            int days = 0;
             @Override
             public void run() {
                 timeSim.incrementDate();
+                if (days == 5) {
+                    randSim.simulate();
+                    days = 0;
+                }
+                else days++;
 
                 Gson g = new Gson();
 

@@ -72,8 +72,49 @@ public class DataGetter {
         return goods;
     }
 
-    public ArrayList<Supplier> getSuppliersThatSellMaterial(int material_id) {
+    public static ArrayList<Supplier> getSuppliers() {
         ArrayList<Supplier> suppliers = new ArrayList<Supplier>();
+        try {
+            String sql = "SELECT supplier_id, name, country FROM Suppliers";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int supplier_id = rs.getInt("supplier_id");
+                String name = rs.getString("name");
+                String country = rs.getString("country");
+                suppliers.add(new Supplier(supplier_id, name, country));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return suppliers;
+    }
+
+    public ArrayList<SupplierMaterialInfo> getSupplierCatalogue(int supplier_id) {
+        ArrayList<SupplierMaterialInfo> catalogue = new ArrayList<SupplierMaterialInfo>();
+        try {
+            String sql = "SELECT si.material_id, si.quantity, ssp.price FROM SuppliersInventory si JOIN SuppliersSellPrice ssp ON si.material_id = ssp.material_id WHERE si.supplier_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, supplier_id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int material_id = rs.getInt("material_id");
+                int quantity = rs.getInt("quantity");
+                int price = rs.getInt("price");
+                catalogue.add(new SupplierMaterialInfo(supplier_id, material_id, price, quantity));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return catalogue;
+    }
+
+    public ArrayList<SupplierMaterialInfo> getSuppliersThatSellMaterial(int material_id) {
+        ArrayList<SupplierMaterialInfo> suppliers = new ArrayList<SupplierMaterialInfo>();
         try {
             String sql = "SELECT supplier_id, quantity FROM SuppliersInventory WHERE material_id = ?";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
@@ -84,7 +125,7 @@ public class DataGetter {
                 int supplier_id = rs.getInt("supplier_id");
                 int price = getSupplierSellPrice(supplier_id, material_id);
                 int quantity = rs.getInt("quantity");
-                suppliers.add(new Supplier(supplier_id, material_id, price, quantity));
+                suppliers.add(new SupplierMaterialInfo(supplier_id, material_id, price, quantity));
             }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
