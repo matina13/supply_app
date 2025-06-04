@@ -29,7 +29,9 @@ webSocket.connect = (function(host) {
     webSocket.Socket.onmessage = function (message) {
         try {
             const msg_JSON = JSON.parse(message.data);
+            console.log(msg_JSON);
             document.getElementById("date").innerText = msg_JSON["date"]; //update date
+            document.getElementById("money").innerText = msg_JSON["money"];
             updateInventoryTable(msg_JSON);
 
             if (msg_JSON["data"][0]["suppliers"] != null) {
@@ -55,31 +57,27 @@ webSocket.initialize();
 function updateInventoryTable(msg_JSON) {
     try {
         const table = document.getElementById("inventoryTable");
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
 
-        // Clear existing rows (keep header row if it exists)
-        const rowCount = table.rows.length;
-        for (let i = rowCount - 1; i > 0; i--) {
-            table.deleteRow(i);
-        }
-
-        // Check if inventory data exists
         const inventory = msg_JSON["data"]?.[0]?.["inventory"];
         if (inventory && Array.isArray(inventory)) {
             inventory.forEach(item => {
-                let row = table.insertRow();
-                let name = row.insertCell(0);
-                name.innerHTML = item.name || 'Unknown Item';
-                let quantity = row.insertCell(1);
-                quantity.innerHTML = item.quantity || 0;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name || 'Unknown Item'}</td>
+                    <td>${item.quantity || 0}</td>
+                `;
+                tbody.appendChild(row);
             });
         } else {
-            // Show message if no inventory data
-            let row = table.insertRow();
-            let cell = row.insertCell(0);
-            cell.colSpan = 2;
-            cell.innerHTML = '<em>No inventory data available</em>';
-            cell.style.textAlign = 'center';
-            cell.style.color = '#999';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="2" style="text-align: center; color: #999;">
+                    <em>No inventory data available</em>
+                </td>
+            `;
+            tbody.appendChild(row);
         }
     } catch (error) {
         console.error('Error updating inventory table:', error);
@@ -87,66 +85,112 @@ function updateInventoryTable(msg_JSON) {
 }
 
 function getSuppliers() {
-    //const e = document.getElementById("prodGoods");
-    //const material_id = e.value;
-
-    //const id = e.options[e.selectedIndex].value;
-    const material_id = 1;
+    const material_id = document.getElementById("prodGoods").value;
     const json = [{"material_id": material_id}];
-
     webSocket.Socket.send(JSON.stringify(json));
+}
+
+function selectSupplier(supplierId, materialId, supplierName, materialName, price, maxQuantity, event) {
+    // Prevent event bubbling
+    event.stopPropagation();
+
+    selectedSupplierId = supplierId;
+    selectedMaterialId = materialId;
+    selectedSupplierName = supplierName;
+    selectedMaterialName = materialName;
+    selectedPrice = price;
+    selectedMaxQuantity = maxQuantity;
+
+    // Highlight selected row
+    const rows = document.querySelectorAll('#suppliersTable tbody tr');
+    rows.forEach(row => {
+        row.classList.remove('selected-row');
+        row.style.backgroundColor = '';
+    });
+    event.currentTarget.closest('tr').classList.add('selected-row');
+
+    // Show buy section
+    document.getElementById('buySection').style.display = 'block';
+    document.getElementById('purchaseMessage').textContent =
+        `Selected ${materialName} from ${supplierName} at $${price} each (max: ${maxQuantity})`;
+    document.getElementById('quantity').value = 1;
+    document.getElementById('quantity').max = maxQuantity;
 }
 
 function updateSuppliersTable(msg_JSON) {
     try {
         const table = document.getElementById("suppliersTable");
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
 
-        // Clear existing rows (keep header row if it exists)
-        const rowCount = table.rows.length;
-        for (let i = rowCount - 1; i > 0; i--) {
-            table.deleteRow(i);
-        }
-
-        // Check if inventory data exists
-        const inventory = msg_JSON["data"]?.[0]?.["suppliers"];
-        if (inventory && Array.isArray(inventory)) {
-            inventory.forEach(item => {
-                let row = table.insertRow();
-                let sup_name = row.insertCell(0);
-                sup_name.innerHTML = item.supplier_id || 'Unknown Item';
-                let price = row.insertCell(1);
-                price.innerHTML = item.price || 0;
-                let quantity = row.insertCell(2);
-                quantity.innerHTML = item.quantity || 0;
+        const suppliers = msg_JSON["data"]?.[0]?.["suppliers"];
+        if (suppliers && Array.isArray(suppliers)) {
+            suppliers.forEach(supplier => {
+                const row = document.createElement('tr');
+                row.className = 'clickable-row';
+                row.innerHTML = `
+                    <td>${supplier.supplier_name || supplier.supplier_id || 'Unknown Supplier'}</td>
+                    <td>$${supplier.price || 0}</td>
+                    <td>${supplier.quantity || 0}</td>
+                    <td>
+                        <button class="select-btn" 
+                                onclick="selectSupplier(
+                                    ${supplier.supplier_id}, 
+                                    ${supplier.material_id},
+                                    '${supplier.supplier_name || supplier.supplier_id}',
+                                    '${supplier.material_name || supplier.material_id}',
+                                    ${supplier.price},
+                                    ${supplier.quantity},
+                                    event
+                                )">
+                            Select
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
         } else {
-            // Show message if no inventory data
-            let row = table.insertRow();
-            let cell = row.insertCell(0);
-            cell.colSpan = 2;
-            cell.innerHTML = '<em>No inventory data available</em>';
-            cell.style.textAlign = 'center';
-            cell.style.color = '#999';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="4" style="text-align: center; color: #999;">
+                    <em>No suppliers found for this material</em>
+                </td>
+            `;
+            tbody.appendChild(row);
         }
+
+        // Don't hide buy section here anymore
     } catch (error) {
-        console.error('Error updating inventory table:', error);
-    }}
+        console.error('Error updating suppliers table:', error);
+    }
+}
 
-function buyMaterial() {
-    const supplier_id = 1;
-    const material_id = 1;
-    const quantity = 1;
-
-    //maybe l8r add way to make multiple orders from multiple suppliers
-
-    const json = [{"buy_material": {"supplier_id": supplier_id, "material_id": material_id, "quantity": quantity}}];
+function buyMaterial(supplier_id, material_id, quantity) {
+    const json = [{
+        "buy_material": {
+            "supplier_id": supplier_id,
+            "material_id": material_id,
+            "quantity": quantity
+        }
+    }];
     webSocket.Socket.send(JSON.stringify(json));
+
+    // Reset selection after purchase
+    document.getElementById('buySection').style.display = 'none';
+    document.getElementById('purchaseMessage').textContent = 'Purchase order sent!';
+    setTimeout(() => {
+        document.getElementById('purchaseMessage').textContent = '';
+    }, 3000);
 }
 
 function produceGood() {
     const producableGoodId = 1;
     const quantityToProduce = 1;
-
-    const json = [{"produce_good": {"producableGoodId": producableGoodId, "quantityToProduce": quantityToProduce}}]
+    const json = [{
+        "produce_good": {
+            "producableGoodId": producableGoodId,
+            "quantityToProduce": quantityToProduce
+        }
+    }];
     webSocket.Socket.send(JSON.stringify(json));
 }
