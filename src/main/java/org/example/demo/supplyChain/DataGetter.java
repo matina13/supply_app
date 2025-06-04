@@ -230,4 +230,30 @@ public class DataGetter {
         return orders;
     }
 
+    public ArrayList<HashMap<String, Object>> getTransit(int user_id) {
+        ArrayList<HashMap<String, Object>> transitList = new ArrayList<>();
+        try {
+            String sql = "SELECT * FROM Transit WHERE buyer_id = ? ORDER BY shipment_date DESC";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                HashMap<String, Object> transit = new HashMap<>();
+                transit.put("transaction_id", rs.getInt("transaction_id"));
+                transit.put("supplier_id", rs.getInt("supplier_id"));
+                transit.put("buyer_id", rs.getInt("buyer_id"));
+                transit.put("order_id", rs.getInt("order_id"));
+                transit.put("shipment_date", rs.getDate("shipment_date").toString());
+                transit.put("delivery_date", rs.getDate("delivery_date").toString());
+                transit.put("done", rs.getBoolean("done"));
+                transitList.add(transit);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching transit data: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return transitList;
+    }
+
 }

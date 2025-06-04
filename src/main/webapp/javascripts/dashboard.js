@@ -57,6 +57,17 @@ webSocket.connect = (function(host) {
                 updateSupplierMaterialsTable(msg_JSON["data"][0]["supplier_materials"], supplierId);
             }
 
+            // NEW: Transactions list
+            if (msg_JSON["data"][0]["transactions_list"] != null) {
+                console.log('Found transactions:', msg_JSON["data"][0]["transactions_list"]);
+                updateTransactionsTable(msg_JSON["data"][0]["transactions_list"]);
+            }
+            // Add this to your existing onmessage function
+            if (msg_JSON["data"][0]["transit_list"] != null) {
+                console.log('Found transit:', msg_JSON["data"][0]["transit_list"]);
+                updateTransitTable(msg_JSON["data"][0]["transit_list"]);
+            }
+
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
         }
@@ -488,6 +499,103 @@ function initializeSuppliersWhenReady() {
         }
     };
     checkConnection();
+}
+
+// Load transactions from server
+function loadTransactions() {
+    // Check if WebSocket is ready before sending
+    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
+        const json = [{"get_transactions": true}];
+        webSocket.Socket.send(JSON.stringify(json));
+    } else {
+        alert('Connection not ready. Please try again in a moment.');
+    }
+}
+
+// Update transactions table with data from server
+function updateTransactionsTable(transactions) {
+    const table = document.getElementById("transactionsTable");
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (transactions && Array.isArray(transactions) && transactions.length > 0) {
+        transactions.forEach(transaction => {
+            const row = document.createElement('tr');
+
+            // Format the date
+            const dateFinished = new Date(transaction.date_finished).toLocaleDateString();
+
+            row.innerHTML = `
+                <td>${transaction.transaction_id || 'N/A'}</td>
+                <td>${transaction.type || 'N/A'}</td>
+                <td>${transaction.order_id || 'N/A'}</td>
+                <td>${transaction.supplier_id || 'N/A'}</td>
+                <td>${dateFinished}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="5" style="text-align: center; color: #999; padding: 2rem;">
+                <em>No transactions found</em>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+
+// Load transit data from server
+function loadTransit() {
+    // Check if WebSocket is ready before sending
+    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
+        const json = [{"get_transit": true}];
+        webSocket.Socket.send(JSON.stringify(json));
+    } else {
+        alert('Connection not ready. Please try again in a moment.');
+    }
+}
+
+// Update transit table with data from server
+function updateTransitTable(transitData) {
+    const table = document.getElementById("transitTable");
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (transitData && Array.isArray(transitData) && transitData.length > 0) {
+        transitData.forEach(transit => {
+            const row = document.createElement('tr');
+
+            // Format the dates
+            const shipmentDate = new Date(transit.shipment_date).toLocaleDateString();
+            const deliveryDate = new Date(transit.delivery_date).toLocaleDateString();
+
+            // Determine status and color
+            const isDone = transit.done === 1 || transit.done === true;
+            const status = isDone ? 'Delivered' : 'In Transit';
+            const statusColor = isDone ? '#28a745' : '#ffc107';
+
+            row.innerHTML = `
+                <td>${transit.transaction_id || 'N/A'}</td>
+                <td>${transit.supplier_id || 'N/A'}</td>
+                <td>${transit.order_id || 'N/A'}</td>
+                <td>${shipmentDate}</td>
+                <td>${deliveryDate}</td>
+                <td style="color: ${statusColor}; font-weight: bold;">
+                    ${status}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="6" style="text-align: center; color: #999; padding: 2rem;">
+                <em>No transit data found</em>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
 }
 
 // Call initializeSuppliersWhenReady when page loads instead of loadSuppliers directly

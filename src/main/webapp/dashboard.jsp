@@ -162,6 +162,69 @@
         </div>
     </div>
 
+    <div class="card">
+        <h3>Transaction History</h3>
+
+        <!-- Refresh button -->
+        <div style="margin-bottom: 1rem;">
+            <button onclick="loadTransactions()" style="padding: 0.5rem 1rem; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Refresh Transactions
+            </button>
+        </div>
+
+        <!-- Transactions Table -->
+        <table id="transactionsTable">
+            <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Type</th>
+                <th>Order ID</th>
+                <th>Supplier ID</th>
+                <th>Date Finished</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td colspan="5" style="text-align: center; color: #999; padding: 2rem;">
+                    <em>Click "Refresh Transactions" to load transaction history</em>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Transit -->
+    <div class="card">
+        <h3>Transit Status</h3>
+
+        <!-- Refresh button -->
+        <div style="margin-bottom: 1rem;">
+            <button onclick="loadTransit()" style="padding: 0.5rem 1rem; background-color: #6f42c1; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Refresh Transit
+            </button>
+        </div>
+
+        <!-- Transit Table -->
+        <table id="transitTable">
+            <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Supplier ID</th>
+                <th>Order ID</th>
+                <th>Shipment Date</th>
+                <th>Delivery Date</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td colspan="6" style="text-align: center; color: #999; padding: 2rem;">
+                    <em>Click "Refresh Transit" to load shipment status</em>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Bootstrap JS -->
