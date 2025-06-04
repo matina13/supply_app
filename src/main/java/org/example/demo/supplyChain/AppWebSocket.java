@@ -154,10 +154,33 @@ public class AppWebSocket {
             BuyMaterial buyMaterials = new Gson().fromJson(j.get("buy_material"), BuyMaterial.class);
             buyMaterials.buy(this.user_id, this.timeSim);
         }
+// Update your existing produce_good case in the cases() method
         else if (j.get("produce_good") != null) {
-            Produce produce = new Gson().fromJson(j.get("produce_good"), Produce.class);
-            produce.produce(this.user_id, this.timeSim);
+            try {
+                Produce produce = new Gson().fromJson(j.get("produce_good"), Produce.class);
+                produce.produce(this.user_id, this.timeSim);
+                // If we get here, production was successful
+                this.dataToBeSent.put("alert_message", "Production started successfully!");
+            } catch (RuntimeException e) {
+                // If exception thrown, production failed
+                this.dataToBeSent.put("alert_message", e.getMessage());
+            }
+
+            // Send immediate response with the alert message
+            Gson g = new Gson();
+            String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
+            try {
+                sendMessage(json);
+            } catch (IOException e) {
+                System.err.println("Error sending production result: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // Clear the data after sending
+            this.dataToBeSent.remove("alert_message");
         }
+
+
 
     }
 

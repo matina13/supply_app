@@ -18,9 +18,27 @@ public class Produce {
     private int producableGoodId;
     private int quantityToProduce;
 
+    // Keep your produce method as void, just throw an exception when materials are insufficient
     public void produce(int user_id, TimeSimulator timeSim) {
+        // First, check if user has enough materials for the total quantity
+        HashMap<Integer, Integer> allMaterials = getAllMaterialsNeededToProduce();
+
+        // Validate materials before starting production
+        for (HashMap.Entry<Integer, Integer> entry : allMaterials.entrySet()) {
+            int material_id = entry.getKey();
+            int requiredPerUnit = entry.getValue();
+            int totalRequired = requiredPerUnit * quantityToProduce;
+
+            // Check current inventory for this material
+            int availableQuantity = getCurrentMaterialQuantity(user_id, material_id);
+
+            if (availableQuantity < totalRequired) {
+                throw new RuntimeException("Not enough materials! Please buy more materials from suppliers.");
+            }
+        }
+
+        // If we reach here, user has enough materials for all units
         for (int i = 0; i < quantityToProduce; i++) {
-            HashMap<Integer, Integer> allMaterials = getAllMaterialsNeededToProduce();
             subtractMaterialsFromInventory(user_id, allMaterials);
             LocalDate end_date = addGoodToProduction(producableGoodId, timeSim);
             watchProduction(user_id, end_date, timeSim);
@@ -153,5 +171,24 @@ public class Produce {
             e.printStackTrace();
         }
     }
+    // Add this helper method to check current material quantity
+    private int getCurrentMaterialQuantity(int user_id, int material_id) {
+        try {
+            String sql = "SELECT quantity FROM ProducerInventory WHERE user_id = ? AND material_id = ? AND type = 'material'";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            stmt.setInt(2, material_id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("quantity");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking material quantity: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0; // Return 0 if material not found or error occurred
+    }
 
 }
+

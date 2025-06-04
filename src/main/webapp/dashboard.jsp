@@ -66,12 +66,15 @@
         </table>
     </div>
 
+    <!-- Replace the existing Production Options card in your JSP file with this updated version -->
     <div class="card">
         <h3>Production Options</h3>
         <table>
             <thead>
             <tr>
                 <th>Product Name</th>
+                <th>Quantity to Produce</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
@@ -79,54 +82,83 @@
             <% for (org.example.demo.structs.ProducableGood pg : pgList) { %>
             <tr>
                 <td><%= pg.getName() %></td>
+                <td>
+                    <input type="number"
+                           id="quantity_<%= pg.getId() %>"
+                           class="production-quantity-input"
+                           min="1"
+                           value="1"
+                           style="width: 80px; padding: 0.25rem;">
+                </td>
+                <td>
+                    <button onclick="produceSpecificGood(<%= pg.getId() %>)"
+                            style="padding: 0.5rem 1rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Produce
+                    </button>
+                </td>
             </tr>
             <% } %>
             </tbody>
         </table>
     </div>
 
+
+
+    <!-- Replace the existing Supplier Management card in your JSP file with this updated version -->
     <div class="card">
         <h3>Supplier Management</h3>
+
+        <!-- Step 1: Select Supplier -->
         <div style="margin-bottom: 1rem;">
-            <label for="prodGoods">Select product: </label>
-            <select id="prodGoods">
-                <% for (org.example.demo.structs.ProducableGood pg : pgList) { %>
-                <option value="<%= pg.getId() %>"><%= pg.getName() %></option>
-                <% } %>
+            <label for="supplierSelect">Select Supplier: </label>
+            <select id="supplierSelect" onchange="getSupplierMaterials()">
+                <option value="">-- Choose a Supplier --</option>
+                <!-- Suppliers will be populated by JavaScript -->
             </select>
-            <button onclick="getSuppliers()">Find Suppliers</button>
+            <button onclick="loadSuppliers()" style="margin-left: 0.5rem;">Refresh Suppliers</button>
         </div>
 
-        <table id="suppliersTable">
+        <!-- Step 2: Show Selected Supplier's Materials -->
+        <div id="supplierInfo" style="display: none; margin-bottom: 1rem; padding: 0.5rem; background-color: #f8f9fa; border-radius: 4px;">
+            <strong>Selected Supplier: </strong><span id="selectedSupplierName"></span>
+        </div>
+
+        <!-- Step 3: Materials Table -->
+        <table id="supplierMaterialsTable">
             <thead>
             <tr>
-                <th>Supplier</th>
-                <th>Price</th>
-                <th>Available</th>
+                <th>Material</th>
+                <th>Price per Unit</th>
+                <th>Available Quantity</th>
+                <th>Quantity to Buy</th>
                 <th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <!-- Will be populated by JavaScript -->
+            <tr>
+                <td colspan="5" style="text-align: center; color: #999; padding: 2rem;">
+                    <em>Please select a supplier to view available materials</em>
+                </td>
+            </tr>
             </tbody>
         </table>
 
-        <div id="buySection">
-            <h4>Purchase Materials</h4>
-            <div>
-                <label for="quantity">Quantity: </label>
-                <input type="number" id="quantity" min="1" value="1">
-                <button onclick="confirmPurchase()">Purchase</button>
+        <!-- Purchase Confirmation Section -->
+        <div id="purchaseConfirmSection" style="display: none; margin-top: 1rem; padding: 1rem; background-color: #e8f5e8; border-radius: 4px;">
+            <h4>Purchase Confirmation</h4>
+            <div id="purchaseDetails"></div>
+            <div style="margin-top: 0.5rem;">
+                <button onclick="confirmMaterialPurchase()" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; margin-right: 0.5rem;">
+                    Confirm Purchase
+                </button>
+                <button onclick="cancelPurchase()" style="background-color: #6c757d; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px;">
+                    Cancel
+                </button>
             </div>
-            <div id="purchaseMessage"></div>
+            <div id="purchaseMessage" style="margin-top: 0.5rem; font-weight: bold;"></div>
         </div>
     </div>
 
-    <div class="card" style="text-align: center;">
-        <button onclick="produceGood()" style="padding: 0.75rem 1.5rem; font-size: 1.1rem;">
-            Produce Selected Good
-        </button>
-    </div>
 </div>
 
 <script src="javascripts/dashboard.js"></script>
