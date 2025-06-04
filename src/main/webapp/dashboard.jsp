@@ -13,7 +13,10 @@
 <html>
 <head>
     <title><%= username %>'s Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">-->
     <link rel="stylesheet" type="text/css" href="css/dashboard.css">
+
     <style>
         .clickable-row {
             cursor: pointer;
@@ -161,7 +164,10 @@
 
 </div>
 
+<!-- Bootstrap JS -->
+<!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>-->
 <script src="javascripts/dashboard.js"></script>
+
 <script>
     // Global variables to store selected supplier and material
     let selectedSupplierId = null;
