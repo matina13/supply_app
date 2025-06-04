@@ -33,7 +33,8 @@ public class AppWebSocket {
     private Timer t;
     private int user_id;
     private DataGetter dataGetter;
-    private HashMap<String, Object> dataToBeSent = new HashMap<String, Object>();
+    private HashMap<String, Object> dataToBeSent;
+    private ArrayList<String> dTBS_Clear_List;
     private RandomnessSimulator randSim;
 
     @OnOpen
@@ -41,6 +42,8 @@ public class AppWebSocket {
         this.session = session;
         connections.add(this);
         this.dataGetter = new DataGetter();
+        this.dataToBeSent = new HashMap<String, Object>();
+        this.dTBS_Clear_List = new ArrayList<String>();
         this.randSim = new RandomnessSimulator();
     }
 
@@ -136,6 +139,11 @@ public class AppWebSocket {
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
                 broadcast(json);
+
+                for (String toBeCleared : dTBS_Clear_List) {
+                    dataToBeSent.remove(toBeCleared);
+                }
+                dTBS_Clear_List.clear();
             }
         }, 0, 1000); // every 1 second
     }
@@ -174,6 +182,8 @@ public class AppWebSocket {
                 // If exception thrown, production failed
                 this.dataToBeSent.put("alert_message", e.getMessage());
             }
+
+            this.dTBS_Clear_List.add("alert_message");
         }
         else if (j.get("get_suppliers") != null) {
             this.dataToBeSent.put("suppliers", this.dataGetter.getSuppliers());
