@@ -155,7 +155,7 @@
             <input type="text" name="username" placeholder="Username" required />
         </label>
         <label>
-            <input type="email" name="email" value="${email != null ? email : ''}">
+            <input type="email" name="email" placeholder="email"${Email != null ? email : ''}">
 
         </label>
         <label for="password"></label><input type="password" id="password" name="password" placeholder="Password" required autocomplete="off" />

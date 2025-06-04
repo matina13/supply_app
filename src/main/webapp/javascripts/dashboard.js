@@ -39,32 +39,28 @@ webSocket.connect = (function(host) {
                 alert(msg_JSON["data"][0]["alert_message"]);
             }
 
-            // OLD supplier search for materials
-            if (msg_JSON["data"][0]["suppliers"] != null) {
-                updateSuppliersTable(msg_JSON);
-            }
-
-            // NEW: All suppliers for dropdown
+            //suppliers for dropdown
             if (msg_JSON["data"][0]["all_suppliers"] != null) {
-                console.log('Found all_suppliers:', msg_JSON["data"][0]["all_suppliers"]);
+                console.log('Auto-updating suppliers:', msg_JSON["data"][0]["all_suppliers"]);
                 populateSuppliersDropdown(msg_JSON["data"][0]["all_suppliers"]);
             }
 
-            // NEW: Materials for selected supplier
+            // Materials for selected supplier
             if (msg_JSON["data"][0]["supplier_materials"] != null) {
                 console.log('Found supplier_materials:', msg_JSON["data"][0]["supplier_materials"]);
                 const supplierId = msg_JSON["data"][0]["selected_supplier_id"];
                 updateSupplierMaterialsTable(msg_JSON["data"][0]["supplier_materials"], supplierId);
             }
 
-            // NEW: Transactions list
+            //Transactions list
             if (msg_JSON["data"][0]["transactions_list"] != null) {
-                console.log('Found transactions:', msg_JSON["data"][0]["transactions_list"]);
+                console.log('Auto-updating transactions:', msg_JSON["data"][0]["transactions_list"]);
                 updateTransactionsTable(msg_JSON["data"][0]["transactions_list"]);
             }
-            // Add this to your existing onmessage function
+
+            // Transit list
             if (msg_JSON["data"][0]["transit_list"] != null) {
-                console.log('Found transit:', msg_JSON["data"][0]["transit_list"]);
+                console.log('Auto-updating transit:', msg_JSON["data"][0]["transit_list"]);
                 updateTransitTable(msg_JSON["data"][0]["transit_list"]);
             }
 
@@ -132,7 +128,6 @@ function selectSupplier(supplierId, materialId, supplierName, materialName, pric
     selectedPrice = price;
     selectedMaxQuantity = maxQuantity;
 
-    // Highlight selected row
     const rows = document.querySelectorAll('#suppliersTable tbody tr');
     rows.forEach(row => {
         row.classList.remove('selected-row');
@@ -146,55 +141,6 @@ function selectSupplier(supplierId, materialId, supplierName, materialName, pric
         `Selected ${materialName} from ${supplierName} at $${price} each (max: ${maxQuantity})`;
     document.getElementById('quantity').value = 1;
     document.getElementById('quantity').max = maxQuantity;
-}
-
-function updateSuppliersTable(msg_JSON) {
-    try {
-        //const table = document.getElementById("suppliersTable");
-        const table = document.getElementById("supplierSelect");
-        const tbody = table.querySelector('tbody');
-        tbody.innerHTML = '';
-
-        const suppliers = msg_JSON["data"]?.[0]?.["suppliers"];
-        if (suppliers && Array.isArray(suppliers)) {
-            suppliers.forEach(supplier => {
-                const row = document.createElement('tr');
-                row.className = 'clickable-row';
-                row.innerHTML = `
-                    <td>${supplier.supplier_name || supplier.supplier_id || 'Unknown Supplier'}</td>
-                    <td>$${supplier.price || 0}</td>
-                    <td>${supplier.quantity || 0}</td>
-                    <td>
-                        <button class="select-btn"
-                                onclick="selectSupplier(
-                                    ${supplier.supplier_id},
-                                    ${supplier.material_id},
-                                    '${supplier.supplier_name || supplier.supplier_id}',
-                                    '${supplier.material_name || supplier.material_id}',
-                                    ${supplier.price},
-                                    ${supplier.quantity},
-                                    event
-                                )">
-                            Select
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        } else {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="4" style="text-align: center; color: #999;">
-                    <em>No suppliers found for this material</em>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
-
-        // Don't hide buy section here anymore
-    } catch (error) {
-        console.error('Error updating suppliers table:', error);
-    }
 }
 
 function buyMaterial(supplier_id, material_id, quantity) {
@@ -221,7 +167,6 @@ function buyMaterial(supplier_id, material_id, quantity) {
 }
 
 function produceGood(producableGoodId , quantityToProduce ) {
-
     const json = [{
         "produce_good": {
             "producableGoodId": producableGoodId,
@@ -230,8 +175,6 @@ function produceGood(producableGoodId , quantityToProduce ) {
     }];
     webSocket.Socket.send(JSON.stringify(json));
 }
-
-// Add this function to your dashboard.js file or in the script section of your JSP
 
 function produceSpecificGood(producableGoodId) {
     const quantityInput = document.getElementById(`quantity_${producableGoodId}`);
@@ -257,7 +200,7 @@ function produceSpecificGood(producableGoodId) {
     }
 }
 
-// Optional: Function to show production messages
+// Function to show production messages
 function showProductionMessage(message) {
     // Create a temporary message element
     const messageDiv = document.createElement('div');
@@ -291,7 +234,7 @@ let pendingPurchase = {
     material_name: ''
 };
 
-// Load all suppliers on page load or when refresh button is clicked
+// Load all suppliers
 function loadSuppliers() {
     // Check if WebSocket is ready before sending
     if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
@@ -304,9 +247,11 @@ function loadSuppliers() {
     }
 }
 
-// Populate suppliers dropdown (call this when you receive supplier data)
 function populateSuppliersDropdown(suppliers) {
     const supplierSelect = document.getElementById('supplierSelect');
+    const currentSelection = supplierSelect.value; // Preserve current selection
+
+    // Clear and repopulate
     supplierSelect.innerHTML = '<option value="">-- Choose a Supplier --</option>';
 
     if (suppliers && Array.isArray(suppliers)) {
@@ -315,6 +260,12 @@ function populateSuppliersDropdown(suppliers) {
             option.value = supplier.supplier_id;
             option.textContent = supplier.name || `Supplier ${supplier.supplier_id}`;
             option.dataset.supplierName = supplier.name || `Supplier ${supplier.supplier_id}`;
+
+            // Restore selection if it was previously selected
+            if (supplier.supplier_id.toString() === currentSelection) {
+                option.selected = true;
+            }
+
             supplierSelect.appendChild(option);
         });
     }
@@ -501,18 +452,7 @@ function initializeSuppliersWhenReady() {
     checkConnection();
 }
 
-// Load transactions from server
-function loadTransactions() {
-    // Check if WebSocket is ready before sending
-    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
-        const json = [{"get_transactions": true}];
-        webSocket.Socket.send(JSON.stringify(json));
-    } else {
-        alert('Connection not ready. Please try again in a moment.');
-    }
-}
-
-// Update transactions table with data from server
+//Update transactions table with data from server
 function updateTransactionsTable(transactions) {
     const table = document.getElementById("transactionsTable");
     const tbody = table.querySelector('tbody');
@@ -545,18 +485,7 @@ function updateTransactionsTable(transactions) {
     }
 }
 
-// Load transit data from server
-function loadTransit() {
-    // Check if WebSocket is ready before sending
-    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
-        const json = [{"get_transit": true}];
-        webSocket.Socket.send(JSON.stringify(json));
-    } else {
-        alert('Connection not ready. Please try again in a moment.');
-    }
-}
-
-// Update transit table with data from server
+//Missing updateTransitTable function
 function updateTransitTable(transitData) {
     const table = document.getElementById("transitTable");
     const tbody = table.querySelector('tbody');

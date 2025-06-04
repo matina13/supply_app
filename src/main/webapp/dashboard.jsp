@@ -64,12 +64,10 @@
             </tr>
             </thead>
             <tbody>
-            <!-- Will be populated by JavaScript -->
+            <!-- JavaScript -->
             </tbody>
         </table>
     </div>
-
-    <!-- Replace the existing Production Options card in your JSP file with this updated version -->
     <div class="card">
         <h3>Production Options</h3>
         <table>
@@ -105,28 +103,23 @@
         </table>
     </div>
 
-
-
-    <!-- Replace the existing Supplier Management card in your JSP file with this updated version -->
     <div class="card">
         <h3>Supplier Management</h3>
 
-        <!-- Step 1: Select Supplier -->
+        <!--Select Supplier -->
         <div style="margin-bottom: 1rem;">
             <label for="supplierSelect">Select Supplier: </label>
             <select id="supplierSelect" onchange="getSupplierMaterials()">
                 <option value="">-- Choose a Supplier --</option>
-                <!-- Suppliers will be populated by JavaScript -->
+                <!--Suppliers will be populated automatically-->
             </select>
-            <button onclick="loadSuppliers()" style="margin-left: 0.5rem;">Refresh Suppliers</button>
         </div>
-
         <!-- Step 2: Show Selected Supplier's Materials -->
         <div id="supplierInfo" style="display: none; margin-bottom: 1rem; padding: 0.5rem; background-color: #f8f9fa; border-radius: 4px;">
             <strong>Selected Supplier: </strong><span id="selectedSupplierName"></span>
         </div>
 
-        <!-- Step 3: Materials Table -->
+        <!-- Materials Table -->
         <table id="supplierMaterialsTable">
             <thead>
             <tr>
@@ -165,12 +158,6 @@
     <div class="card">
         <h3>Transaction History</h3>
 
-        <!-- Refresh button -->
-        <div style="margin-bottom: 1rem;">
-            <button onclick="loadTransactions()" style="padding: 0.5rem 1rem; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Refresh Transactions
-            </button>
-        </div>
 
         <!-- Transactions Table -->
         <table id="transactionsTable">
@@ -196,13 +183,6 @@
     <!-- Transit -->
     <div class="card">
         <h3>Transit Status</h3>
-
-        <!-- Refresh button -->
-        <div style="margin-bottom: 1rem;">
-            <button onclick="loadTransit()" style="padding: 0.5rem 1rem; background-color: #6f42c1; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Refresh Transit
-            </button>
-        </div>
 
         <!-- Transit Table -->
         <table id="transitTable">
