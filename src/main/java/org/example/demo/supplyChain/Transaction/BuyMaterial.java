@@ -90,6 +90,10 @@ public class BuyMaterial {
         }
     }
 
+    private void calculateDaysToTravel() {
+
+    }
+
     private int sendToTransit(int user_id, LocalDate date) {
         try {
             String sql = "SELECT MAX(transaction_id), MAX(order_id) FROM Transit";

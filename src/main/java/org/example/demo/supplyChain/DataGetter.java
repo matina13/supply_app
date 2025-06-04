@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.example.demo.structs.*;
 
@@ -72,7 +73,7 @@ public class DataGetter {
         return goods;
     }
 
-    public static ArrayList<Supplier> getSuppliers() {
+    public ArrayList<Supplier> getSuppliers() {
         ArrayList<Supplier> suppliers = new ArrayList<Supplier>();
         try {
             String sql = "SELECT supplier_id, name, country FROM Suppliers";

@@ -132,6 +132,7 @@ public class AppWebSocket {
                 Gson g = new Gson();
 
                 dataToBeSent.put("inventory", dataGetter.getInventory(user_id));
+                dataToBeSent.put("transactions", dataGetter.getTransactions(user_id));
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
                 broadcast(json);
@@ -157,15 +158,25 @@ public class AppWebSocket {
         else if (j.get("material_id") != null) {
             String material_id_string = j.get("material_id").getAsString();
             int material_id = Integer.parseInt(material_id_string);
-            this.dataToBeSent.put("suppliers", dataGetter.getSuppliersThatSellMaterial(material_id));
+            this.dataToBeSent.put("suppliers_that_sell_material", this.dataGetter.getSuppliersThatSellMaterial(material_id));
         }
         else if (j.get("buy_material") != null) {
             BuyMaterial buyMaterials = new Gson().fromJson(j.get("buy_material"), BuyMaterial.class);
             buyMaterials.buy(this.user_id, this.timeSim);
         }
         else if (j.get("produce_good") != null) {
-            Produce produce = new Gson().fromJson(j.get("produce_good"), Produce.class);
-            produce.produce(this.user_id, this.timeSim);
+            try {
+                Produce produce = new Gson().fromJson(j.get("produce_good"), Produce.class);
+                produce.produce(this.user_id, this.timeSim);
+                // If we get here, production was successful
+                this.dataToBeSent.put("alert_message", "Production started successfully!");
+            } catch (RuntimeException e) {
+                // If exception thrown, production failed
+                this.dataToBeSent.put("alert_message", e.getMessage());
+            }
+        }
+        else if (j.get("get_suppliers") != null) {
+            this.dataToBeSent.put("suppliers", this.dataGetter.getSuppliers());
         }
 
     }

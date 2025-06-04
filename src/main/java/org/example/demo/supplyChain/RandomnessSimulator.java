@@ -40,15 +40,15 @@ public class RandomnessSimulator {
 
     public void simulate() {
         int priceFluctuation = ThreadLocalRandom.current().nextInt(-5,6); //price fluctuation from -5 to 5
-        int randomSupplier = ThreadLocalRandom.current().nextInt(0, this.suppliersList.size() + 1);
-        int randomMaterial = ThreadLocalRandom.current().nextInt(0, this.materialsList.size() + 1);
+        int randomSupplier = ThreadLocalRandom.current().nextInt(1, this.suppliersList.size() + 1);
+        int randomMaterial = ThreadLocalRandom.current().nextInt(1, this.materialsList.size() + 1);
 
         updateSupplierPrices(priceFluctuation, randomSupplier, randomMaterial);
     }
 
     private void updateSupplierPrices(int priceFluctuation, int supplier_id, int material_id) {
         try {
-            String sql = "UPDATE SuppliersSellPrice SET price = price + ? WHERE supplier_id = ? AND material_id = ?";
+            String sql = "UPDATE SuppliersSellPrice SET price = GREATEST(price + ?, 1) WHERE supplier_id = ? AND material_id = ? ";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, priceFluctuation);
             stmt.setInt(2, supplier_id);
