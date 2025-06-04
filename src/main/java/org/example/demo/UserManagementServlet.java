@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -16,6 +18,56 @@ import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/UserManagementServlet")
 public class UserManagementServlet extends HttpServlet {
+
+    // Simple country to continent coordinates mapping (same as RegisterServlet)
+    private static final Map<String, int[]> COUNTRY_COORDINATES = new HashMap<>();
+
+    static {
+        // North America (0, 0)
+        String[] northAmerica = {"US", "CA", "MX", "GT", "CR", "PA", "CU", "JM"};
+        for (String code : northAmerica) {
+            COUNTRY_COORDINATES.put(code, new int[]{0, 0});
+        }
+
+        // South America (0, 1)
+        String[] southAmerica = {"BR", "AR", "CL", "PE", "CO", "VE", "EC", "BO", "PY", "UY", "GY", "SR"};
+        for (String code : southAmerica) {
+            COUNTRY_COORDINATES.put(code, new int[]{0, 1});
+        }
+
+        // Europe (1, 0)
+        String[] europe = {"GB", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "AT", "SE", "NO", "DK",
+                "FI", "PL", "CZ", "HU", "PT", "GR", "IE", "RO", "BG", "HR", "SK", "SI",
+                "EE", "LV", "LT", "LU", "MT", "CY", "RU", "UA", "BY", "RS", "BA", "ME",
+                "MK", "AL", "MD"};
+        for (String code : europe) {
+            COUNTRY_COORDINATES.put(code, new int[]{1, 0});
+        }
+
+        // Africa (1, 1)
+        String[] africa = {"NG", "ET", "EG", "ZA", "KE", "UG", "DZ", "SD", "MA", "AO", "GH", "MZ",
+                "MG", "CM", "CI", "NE", "BF", "ML", "MW", "ZM", "SO", "SN", "TD", "SL",
+                "LY", "TN", "BW", "NA", "ZW", "TZ", "RW", "CG", "CD", "CF"};
+        for (String code : africa) {
+            COUNTRY_COORDINATES.put(code, new int[]{1, 1});
+        }
+
+        // Asia (2, 0)
+        String[] asia = {"CN", "IN", "ID", "PK", "BD", "JP", "PH", "VN", "TR", "IR", "TH", "MM",
+                "KR", "IQ", "AF", "SA", "UZ", "MY", "NP", "YE", "KP", "SY", "KH", "JO",
+                "AZ", "AE", "TJ", "IL", "LA", "SG", "OM", "KW", "GE", "MN", "AM", "QA",
+                "BH", "TL", "LB", "KG", "TM", "BT", "BN", "MV"};
+        for (String code : asia) {
+            COUNTRY_COORDINATES.put(code, new int[]{2, 0});
+        }
+
+        // Oceania (2, 1)
+        String[] oceania = {"AU", "PG", "NZ", "FJ", "SB", "NC", "PF", "VU", "WS", "FM", "TO", "KI",
+                "PW", "MH", "TV", "NR"};
+        for (String code : oceania) {
+            COUNTRY_COORDINATES.put(code, new int[]{2, 1});
+        }
+    }
 
     // User class to hold user data
     public static class User {
@@ -113,12 +165,14 @@ public class UserManagementServlet extends HttpServlet {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
         String role = request.getParameter("role");
+        String countryCode = request.getParameter("country");
 
         // Basic validation
         if (username == null || username.trim().isEmpty() ||
                 email == null || email.trim().isEmpty() ||
                 password == null || password.trim().isEmpty() ||
-                role == null || role.trim().isEmpty()) {
+                role == null || role.trim().isEmpty() ||
+                countryCode == null || countryCode.trim().isEmpty()) {
             request.setAttribute("error", "All fields are required");
             getAllUsers(request, response);
             return;
@@ -131,59 +185,88 @@ public class UserManagementServlet extends HttpServlet {
             return;
         }
 
+        // Country validation
+        int[] coordinates = COUNTRY_COORDINATES.get(countryCode);
+        if (coordinates == null) {
+            request.setAttribute("error", "Invalid country selection");
+            getAllUsers(request, response);
+            return;
+        }
+
         try (Connection conn = DBUtil.getConnection()) {
-            // Check if username already exists
-            String checkSql = "SELECT COUNT(*) FROM users WHERE username = ?";
-            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
-            checkStmt.setString(1, username);
-            ResultSet rs = checkStmt.executeQuery();
-            rs.next();
+            // Use transaction for data consistency
+            conn.setAutoCommit(false);
 
-            if (rs.getInt(1) > 0) {
-                request.setAttribute("error", "Username already exists");
-                getAllUsers(request, response);
-                return;
-            }
+            try {
+                // Check if username already exists
+                String checkSql = "SELECT COUNT(*) FROM users WHERE username = ?";
+                PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+                checkStmt.setString(1, username);
+                ResultSet rs = checkStmt.executeQuery();
+                rs.next();
 
-            // Check if email already exists
-            String checkEmailSql = "SELECT COUNT(*) FROM users WHERE email = ?";
-            PreparedStatement checkEmailStmt = conn.prepareStatement(checkEmailSql);
-            checkEmailStmt.setString(1, email);
-            ResultSet emailRs = checkEmailStmt.executeQuery();
-            emailRs.next();
-
-            if (emailRs.getInt(1) > 0) {
-                request.setAttribute("error", "Email already exists");
-                getAllUsers(request, response);
-                return;
-            }
-
-            // Hash the password with BCrypt
-            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-
-            // Insert new user
-            String sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, username);
-            stmt.setString(2, email);
-            stmt.setString(3, hashedPassword);
-            stmt.setString(4, role);
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                request.setAttribute("success", "User added successfully");
-
-                int id = DBUtil.getRegisteredUserId(conn, email);
-                if (id != -1) {
-                    String sql2 = "INSERT INTO UserData (user_id, money, last_date) VALUES (?, ?, ?)";
-                    PreparedStatement stmt2 = conn.prepareStatement(sql2);
-                    stmt2.setInt(1, id);
-                    stmt2.setInt(2, 10000);
-                    stmt2.setDate(3, Date.valueOf(LocalDate.of(2025,5,1)));
-                    stmt2.executeUpdate();
+                if (rs.getInt(1) > 0) {
+                    conn.rollback();
+                    request.setAttribute("error", "Username already exists");
+                    getAllUsers(request, response);
+                    return;
                 }
-            } else {
-                request.setAttribute("error", "Failed to add user");
+
+                // Check if email already exists
+                String checkEmailSql = "SELECT COUNT(*) FROM users WHERE email = ?";
+                PreparedStatement checkEmailStmt = conn.prepareStatement(checkEmailSql);
+                checkEmailStmt.setString(1, email);
+                ResultSet emailRs = checkEmailStmt.executeQuery();
+                emailRs.next();
+
+                if (emailRs.getInt(1) > 0) {
+                    conn.rollback();
+                    request.setAttribute("error", "Email already exists");
+                    getAllUsers(request, response);
+                    return;
+                }
+
+                // Hash the password with BCrypt
+                String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
+                // Insert new user
+                String sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setString(1, username);
+                stmt.setString(2, email);
+                stmt.setString(3, hashedPassword);
+                stmt.setString(4, role);
+
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    int id = DBUtil.getRegisteredUserId(conn, email);
+                    if (id != -1) {
+                        // Insert UserData with location coordinates
+                        String sql2 = "INSERT INTO userdata(user_id, money, last_date, location_x, location_y) VALUES (?, ?, ?, ?, ?)";
+                        PreparedStatement stmt2 = conn.prepareStatement(sql2);
+                        stmt2.setInt(1, id);
+                        stmt2.setInt(2, 10000); // Starting money
+                        stmt2.setDate(3, Date.valueOf(LocalDate.of(2025, 5, 1))); // Starting date
+                        stmt2.setInt(4, coordinates[0]); // location_x
+                        stmt2.setInt(5, coordinates[1]); // location_y
+                        stmt2.executeUpdate();
+
+                        // Commit transaction
+                        conn.commit();
+                        request.setAttribute("success", "User added successfully with location data");
+                    } else {
+                        conn.rollback();
+                        request.setAttribute("error", "Failed to retrieve user ID after creation");
+                    }
+                } else {
+                    conn.rollback();
+                    request.setAttribute("error", "Failed to add user");
+                }
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -265,16 +348,59 @@ public class UserManagementServlet extends HttpServlet {
         }
 
         try (Connection conn = DBUtil.getConnection()) {
-            String sql = "DELETE FROM users WHERE id = ?";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setInt(1, Integer.parseInt(idStr));
+            // Start transaction
+            conn.setAutoCommit(false);
 
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                request.setAttribute("success", "User deleted successfully");
-            } else {
-                request.setAttribute("error", "Failed to delete user");
+            int userId = Integer.parseInt(idStr);
+
+            try {
+                // Delete from related tables first (due to foreign key constraints)
+
+                // Delete from ProducerInventory
+                String sql1 = "DELETE FROM ProducerInventory WHERE user_id = ?";
+                PreparedStatement stmt1 = conn.prepareStatement(sql1);
+                stmt1.setInt(1, userId);
+                stmt1.executeUpdate();
+
+                // Delete from Transactions
+                String sql2 = "DELETE FROM Transactions WHERE user_id = ?";
+                PreparedStatement stmt2 = conn.prepareStatement(sql2);
+                stmt2.setInt(1, userId);
+                stmt2.executeUpdate();
+
+                // Delete from Transit (where buyer_id = user_id)
+                String sql3 = "DELETE FROM Transit WHERE buyer_id = ?";
+                PreparedStatement stmt3 = conn.prepareStatement(sql3);
+                stmt3.setInt(1, userId);
+                stmt3.executeUpdate();
+
+                // Delete from UserData
+                String sql4 = "DELETE FROM userdata WHERE user_id = ?";
+                PreparedStatement stmt4 = conn.prepareStatement(sql4);
+                stmt4.setInt(1, userId);
+                stmt4.executeUpdate();
+
+                // Finally delete from users table
+                String sql5 = "DELETE FROM users WHERE id = ?";
+                PreparedStatement stmt5 = conn.prepareStatement(sql5);
+                stmt5.setInt(1, userId);
+                int rowsAffected = stmt5.executeUpdate();
+
+                if (rowsAffected > 0) {
+                    conn.commit(); // Commit transaction
+                    request.setAttribute("success", "User and all related data deleted successfully");
+                } else {
+                    conn.rollback(); // Rollback transaction
+                    request.setAttribute("error", "Failed to delete user");
+                }
+
+            } catch (SQLException e) {
+                conn.rollback(); // Rollback on error
+                throw e;
+            } finally {
+                conn.setAutoCommit(true); // Reset auto-commit
             }
+
         } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
             request.setAttribute("error", "Error deleting user: " + e.getMessage());
@@ -314,5 +440,4 @@ public class UserManagementServlet extends HttpServlet {
 
         getAllUsers(request, response);
     }
-
 }

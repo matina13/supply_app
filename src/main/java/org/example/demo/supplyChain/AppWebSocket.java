@@ -139,6 +139,36 @@ public class AppWebSocket {
                 dataToBeSent.put("transactions", dataGetter.getTransactions(user_id));
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
+                // Add suppliers data (auto-update supplier management)
+                ArrayList<Supplier> suppliers = dataGetter.getSuppliers();
+                ArrayList<HashMap<String, Object>> supplierData = new ArrayList<>();
+                for (Supplier s : suppliers) {
+                    HashMap<String, Object> supplier = new HashMap<>();
+                    supplier.put("supplier_id", s.getSupplier_id());
+                    supplier.put("name", s.getName());
+                    supplier.put("country", s.getCountry());
+                    supplierData.add(supplier);
+                }
+                dataToBeSent.put("all_suppliers", supplierData);
+
+                // Add transit data (auto-update transit status)
+                dataToBeSent.put("transit_list", dataGetter.getTransit(user_id));
+
+                // Add transaction history (auto-update transaction history)
+                ArrayList<Transaction> transactions = dataGetter.getTransactions(user_id);
+                ArrayList<HashMap<String, Object>> transactionData = new ArrayList<>();
+                for (Transaction t : transactions) {
+                    HashMap<String, Object> transaction = new HashMap<>();
+                    transaction.put("transaction_id", t.getTransaction_id());
+                    transaction.put("type", t.getType());
+                    transaction.put("order_id", t.getOrder_id());
+                    transaction.put("supplier_id", t.getSupplier_id());
+                    transaction.put("buyer_id", t.getBuyer_id());
+                    transaction.put("date_finished", t.getDate_finished().toString());
+                    transactionData.add(transaction);
+                }
+                dataToBeSent.put("transactions_list", transactionData);
+
                 broadcast(json);
 
                 for (String toBeCleared : dTBS_Clear_List) {
@@ -224,29 +254,7 @@ public class AppWebSocket {
             this.dTBS_Clear_List.add("supplier_materials");
             this.dTBS_Clear_List.add("selected_supplier_id");
         }
-        else if (j.get("get_transactions") != null) {
-            ArrayList<Transaction> transactions = dataGetter.getTransactions(this.user_id);
-            ArrayList<HashMap<String, Object>> transactionData = new ArrayList<>();
 
-            for (Transaction t : transactions) {
-                HashMap<String, Object> transaction = new HashMap<>();
-                transaction.put("transaction_id", t.getTransaction_id());
-                transaction.put("type", t.getType());
-                transaction.put("order_id", t.getOrder_id());
-                transaction.put("supplier_id", t.getSupplier_id());
-                transaction.put("buyer_id", t.getBuyer_id());
-                transaction.put("date_finished", t.getDate_finished().toString());
-                transactionData.add(transaction);
-            }
-
-            this.dataToBeSent.put("transactions_list", transactionData);
-            this.dTBS_Clear_List.add("transactions_list");
-        }
-        else if (j.get("get_transit") != null) {
-            ArrayList<HashMap<String, Object>> transitData = dataGetter.getTransit(this.user_id);
-            this.dataToBeSent.put("transit_list", transitData);
-            this.dTBS_Clear_List.add("transit_list");
-        }
 
     }
 

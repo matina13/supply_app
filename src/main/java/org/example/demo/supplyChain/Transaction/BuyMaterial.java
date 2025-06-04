@@ -177,14 +177,37 @@ public class BuyMaterial {
         }
     }
 
+    // Replace the existing addToMaterialToInventory method with this:
+
     private void addToMaterialToInventory(int user_id) {
         try {
-            String sql = "UPDATE ProducerInventory SET quantity = quantity + ? WHERE user_id = ? AND material_id = ?";
-            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
-            stmt.setInt(1, this.quantity);
-            stmt.setInt(2, user_id);
-            stmt.setInt(3, this.material_id);
-            stmt.executeUpdate();
+            // Check if user already has this material in inventory
+            String checkSql = "SELECT COUNT(*) FROM ProducerInventory WHERE user_id = ? AND material_id = ? AND type = 'material'";
+            PreparedStatement checkStmt = DBUtil.getConnection().prepareStatement(checkSql);
+            checkStmt.setInt(1, user_id);
+            checkStmt.setInt(2, this.material_id);
+            ResultSet rs = checkStmt.executeQuery();
+
+            int exists = 0;
+            if (rs.next()) {
+                exists = rs.getInt(1);
+            }
+
+            if (exists == 0) { // doesn't exist - add new material entry
+                String insertSql = "INSERT INTO ProducerInventory (user_id, material_id, producableGoodId, quantity, type) VALUES (?, ?, NULL, ?, 'material')";
+                PreparedStatement insertStmt = DBUtil.getConnection().prepareStatement(insertSql);
+                insertStmt.setInt(1, user_id);
+                insertStmt.setInt(2, this.material_id);
+                insertStmt.setInt(3, this.quantity);
+                insertStmt.executeUpdate();
+            } else { // exists - update quantity
+                String updateSql = "UPDATE ProducerInventory SET quantity = quantity + ? WHERE user_id = ? AND material_id = ? AND type = 'material'";
+                PreparedStatement updateStmt = DBUtil.getConnection().prepareStatement(updateSql);
+                updateStmt.setInt(1, this.quantity);
+                updateStmt.setInt(2, user_id);
+                updateStmt.setInt(3, this.material_id);
+                updateStmt.executeUpdate();
+            }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
