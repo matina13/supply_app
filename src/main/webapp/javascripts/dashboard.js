@@ -34,14 +34,29 @@ webSocket.connect = (function(host) {
             document.getElementById("money").innerText = msg_JSON["money"];
             updateInventoryTable(msg_JSON);
 
-            // Add this new part for production alerts
+            // Production alerts
             if (msg_JSON["data"][0]["alert_message"] != null) {
                 alert(msg_JSON["data"][0]["alert_message"]);
             }
 
+            // OLD supplier search for materials
             if (msg_JSON["data"][0]["suppliers"] != null) {
                 updateSuppliersTable(msg_JSON);
             }
+
+            // NEW: All suppliers for dropdown
+            if (msg_JSON["data"][0]["all_suppliers"] != null) {
+                console.log('Found all_suppliers:', msg_JSON["data"][0]["all_suppliers"]);
+                populateSuppliersDropdown(msg_JSON["data"][0]["all_suppliers"]);
+            }
+
+            // NEW: Materials for selected supplier
+            if (msg_JSON["data"][0]["supplier_materials"] != null) {
+                console.log('Found supplier_materials:', msg_JSON["data"][0]["supplier_materials"]);
+                const supplierId = msg_JSON["data"][0]["selected_supplier_id"];
+                updateSupplierMaterialsTable(msg_JSON["data"][0]["supplier_materials"], supplierId);
+            }
+
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
         }
@@ -181,12 +196,17 @@ function buyMaterial(supplier_id, material_id, quantity) {
     }];
     webSocket.Socket.send(JSON.stringify(json));
 
-    // Reset selection after purchase
-    document.getElementById('buySection').style.display = 'none';
-    document.getElementById('purchaseMessage').textContent = 'Purchase order sent!';
-    setTimeout(() => {
-        document.getElementById('purchaseMessage').textContent = '';
-    }, 3000);
+    // Show success message for new supplier management interface
+    const purchaseMessage = document.getElementById('purchaseMessage');
+    if (purchaseMessage) {
+        purchaseMessage.textContent = 'Purchase order sent!';
+        purchaseMessage.style.color = '#28a745';
+
+        // Hide confirmation section after 3 seconds
+        setTimeout(() => {
+            cancelPurchase();
+        }, 3000);
+    }
 }
 
 function produceGood(producableGoodId , quantityToProduce ) {

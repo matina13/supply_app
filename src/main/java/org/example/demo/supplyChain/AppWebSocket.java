@@ -185,8 +185,43 @@ public class AppWebSocket {
 
             this.dTBS_Clear_List.add("alert_message");
         }
+
         else if (j.get("get_suppliers") != null) {
-            this.dataToBeSent.put("suppliers", this.dataGetter.getSuppliers());
+            ArrayList<Supplier> suppliers = dataGetter.getSuppliers();
+            ArrayList<HashMap<String, Object>> supplierData = new ArrayList<>();
+
+            for (Supplier s : suppliers) {
+                HashMap<String, Object> supplier = new HashMap<>();
+                supplier.put("supplier_id", s.getSupplier_id());
+                supplier.put("name", s.getName());
+                supplier.put("country", s.getCountry());
+                supplierData.add(supplier);
+            }
+
+            this.dataToBeSent.put("all_suppliers", supplierData);
+            this.dTBS_Clear_List.add("all_suppliers");
+        }
+        else if (j.get("get_supplier_materials") != null) {
+            JsonObject supplierRequest = j.get("get_supplier_materials").getAsJsonObject();
+            int supplier_id = supplierRequest.get("supplier_id").getAsInt();
+
+            ArrayList<SupplierMaterialInfo> catalogue = dataGetter.getSupplierCatalogue(supplier_id);
+            ArrayList<HashMap<String, Object>> materials = new ArrayList<>();
+
+            for (SupplierMaterialInfo info : catalogue) {
+                HashMap<String, Object> material = new HashMap<>();
+                material.put("material_id", info.getMaterial_id());
+                material.put("material_name", dataGetter.getMaterialOrGoodName("material", info.getMaterial_id()));
+                material.put("quantity", info.getQuantity());
+                material.put("price", info.getPrice());
+                material.put("supplier_id", supplier_id);
+                materials.add(material);
+            }
+
+            this.dataToBeSent.put("supplier_materials", materials);
+            this.dataToBeSent.put("selected_supplier_id", supplier_id);
+            this.dTBS_Clear_List.add("supplier_materials");
+            this.dTBS_Clear_List.add("selected_supplier_id");
         }
 
     }
