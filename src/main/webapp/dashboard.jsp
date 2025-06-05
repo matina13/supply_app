@@ -69,7 +69,6 @@
         </table>
     </div>
 
-    <!-- Replace the existing Production Options card in your JSP file with this updated version -->
     <div class="card">
         <h3>Production Options</h3>
         <table>
@@ -227,8 +226,79 @@
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>-->
+<!--update to VIP -->
+<% if ("user".equals(role)) { %>
+<div class="card">
+    <h3>Upgrade to Plus</h3>
+
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+        <h4 style="margin-top: 0;">Plus Features:</h4>
+        <ul style="margin-bottom: 0;">
+            <li>AI Supplier Optimization</li>
+            <li>Advanced Analytics</li>
+            <li>Priority Support</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">$500</div>
+        <div style="color: #6c757d;">One-time payment</div>
+    </div>
+
+    <div style="text-align: center;">
+        <button onclick="upgradeToPlus()"
+                style="padding: 0.75rem 1.5rem; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">
+            Upgrade to Plus
+        </button>
+    </div>
+</div>
+<% } %>
+
+<!--only for plus users -->
+<% if ("plus".equals(role)) { %>
+
+<h3 align="center">Vip features</h3>
+
+
+    <div class="card">
+        <h3>Production Options</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Quantity to Produce</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% for (org.example.demo.structs.ProducableGood pg : pgList) { %>
+            <tr>
+                <td><%= pg.getName() %></td>
+                <td>
+                    <input type="number"
+                           id="quantity_<%= pg.getId() %>"
+                           class="production-quantity-input"
+                           min="1"
+                           value="1"
+                           style="width: 80px; padding: 0.25rem;">
+                </td>
+                <td>
+                    <button onclick="startAlgorithm(<%= pg.getId() %>)"
+                            style="padding: 0.5rem 1rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                         Find Best Supplier
+                    </button>
+                </td>
+
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+    </div>
+
+<% } %>
+
+
+
 <script src="javascripts/dashboard.js"></script>
 
 <script>

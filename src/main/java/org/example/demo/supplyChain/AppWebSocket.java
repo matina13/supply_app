@@ -39,6 +39,7 @@ public class AppWebSocket {
     private ArrayList<String> dTBS_Clear_List;
     private RandomnessSimulator randSim;
     private Algorithm algorithm;
+    private boolean algorithmTrigger;
 
     @OnOpen
     public void start(Session session) {
@@ -48,6 +49,7 @@ public class AppWebSocket {
         this.dataToBeSent = new HashMap<String, Object>();
         this.dTBS_Clear_List = new ArrayList<String>();
         this.randSim = new RandomnessSimulator();
+        this.algorithmTrigger = false;
     }
 
     @OnClose
@@ -143,6 +145,11 @@ public class AppWebSocket {
                 dataToBeSent.put("transit_list", dataGetter.getTransit(user_id));
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
+                if (algorithmTrigger) {
+                    ArrayList<HashMap<Integer, Integer>> bestCalculation = algorithm.start();
+                    dataToBeSent.put("bestCalculation", bestCalculation);
+                }
+
                 broadcast(json);
 
                 for (String toBeCleared : dTBS_Clear_List) {
@@ -201,23 +208,17 @@ public class AppWebSocket {
             JsonObject supplierRequest = j.get("get_supplier_materials").getAsJsonObject();
             int supplier_id = supplierRequest.get("supplier_id").getAsInt();
             ArrayList<SupplierMaterialInfo> supplierCatalogue = dataGetter.getSupplierCatalogue(supplier_id);
-            for (SupplierMaterialInfo s : supplierCatalogue) {
-                System.out.println(s.getMaterial_id() + " " + s.getPrice());
-            }
+
             this.dataToBeSent.put("supplier_materials", supplierCatalogue);
             this.dataToBeSent.put("selected_supplier_id", supplier_id);
-            //this.dTBS_Clear_List.add("supplier_materials");
-            //this.dTBS_Clear_List.add("selected_supplier_id");
         }
 
         else if (j.get("start_algorithm") != null) {
-            JsonObject materialIds = j.get("for_material_ids").getAsJsonObject();
-            //make them array, pass it, to the variable below
-            int[] materials_ids = new int[1];
+            JsonObject producableGoodId = j.get("producableGoodId").getAsJsonObject();
+            ArrayList<Integer> materials_ids = dataGetter.getMaterialsNeededToProduceItem(producableGoodId.getAsInt());
             this.algorithm = new Algorithm(this.user_id, this.dataGetter, materials_ids);
-            //this.algorithm.start();
+            this.algorithmTrigger = true;
         }
-
     }
 
 }

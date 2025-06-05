@@ -539,6 +539,17 @@ function updateTransitTable(transitData) {
         tbody.appendChild(row);
     }
 }
+function startAlgorithm(producableGoodId) {
+    // Send the JSON request
+    const json = [{"start_algorithm": producableGoodId}];
+
+    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
+        webSocket.Socket.send(JSON.stringify(json));
+        console.log('Sent algorithm request:', json);
+    } else {
+        alert('Connection not ready. Please try again.');
+    }
+}
 
 // Call initializeSuppliersWhenReady when page loads instead of loadSuppliers directly
 document.addEventListener('DOMContentLoaded', function() {
