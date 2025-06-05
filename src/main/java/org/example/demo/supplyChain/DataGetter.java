@@ -137,7 +137,7 @@ public class DataGetter {
         return suppliers;
     }
 
-    private int getSupplierSellPrice(int supplier_id, int material_id) {
+    public int getSupplierSellPrice(int supplier_id, int material_id) {
         try {
             String sql = "SELECT price FROM SuppliersSellPrice WHERE supplier_id = ? AND material_id = ?";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
@@ -153,6 +153,27 @@ public class DataGetter {
             e.printStackTrace();
         }
         return 404040404; //should not happen
+    }
+
+    public ArrayList<Integer> getMaterialsNeededToProduceItem(int producableGoodId) {
+        try {
+            String sql = "SELECT material_id FROM MaterialsNeededToProduceGood WHERE producable_good_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, producableGoodId);
+            ResultSet rs = stmt.executeQuery();
+
+            ArrayList<Integer> materials = new ArrayList<Integer>();
+
+            if (rs.next()) {
+                materials.add(rs.getInt("material_id"));
+            }
+
+            return materials;
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null; //should not happen
     }
 
     public String getMaterialOrGoodName(String type, int id) {

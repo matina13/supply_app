@@ -10,9 +10,9 @@ import java.util.*;
 public class Algorithm {
     private int user_id;
     private DataGetter dataGetter;
-    private int[] wantedProducableGoodId;
+    private ArrayList<Integer> wantedProducableGoodId;
 
-    public Algorithm(int user_id, DataGetter dataGetter, int[] wantedProducableGoodIds) {
+    public Algorithm(int user_id, DataGetter dataGetter, ArrayList<Integer> wantedProducableGoodIds) {
         this.user_id = user_id;
         this.dataGetter = dataGetter;
         this.wantedProducableGoodId = wantedProducableGoodIds;

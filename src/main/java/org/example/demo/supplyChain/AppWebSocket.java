@@ -211,11 +211,11 @@ public class AppWebSocket {
         }
 
         else if (j.get("start_algorithm") != null) {
-            JsonObject materialIds = j.get("for_material_ids").getAsJsonObject();
-            //make them array, pass it, to the variable below
-            int[] materials_ids = new int[1];
+            JsonObject producableGoodId = j.get("producableGoodId").getAsJsonObject();
+            ArrayList<Integer> materials_ids = dataGetter.getMaterialsNeededToProduceItem(producableGoodId.getAsInt());
             this.algorithm = new Algorithm(this.user_id, this.dataGetter, materials_ids);
-            //this.algorithm.start();
+            ArrayList<HashMap<Integer, Integer>> bestCalculation = this.algorithm.start();
+            this.dataToBeSent.put("bestCalculation", bestCalculation);
         }
 
     }
