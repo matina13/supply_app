@@ -67,6 +67,7 @@ public class TimeSimulator {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 this.money = rs.getInt("money");
+                return this.money;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

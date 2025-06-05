@@ -10,17 +10,17 @@ import java.util.*;
 public class Algorithm {
     private int user_id;
     private DataGetter dataGetter;
-    private ArrayList<Integer> wantedProducableGoodId;
+    private ArrayList<Integer> wantedProducableGoodIds;
 
     public Algorithm(int user_id, DataGetter dataGetter, ArrayList<Integer> wantedProducableGoodIds) {
         this.user_id = user_id;
         this.dataGetter = dataGetter;
-        this.wantedProducableGoodId = wantedProducableGoodIds;
+        this.wantedProducableGoodIds = wantedProducableGoodIds;
     }
 
     public ArrayList<HashMap<Integer, Integer>> start() {
         ArrayList<HashMap<Integer, Integer>> bestCalculation = new ArrayList<HashMap<Integer, Integer>>();
-        for (int i : this.wantedProducableGoodId) {
+        for (int i : this.wantedProducableGoodIds) {
             bestCalculation.add(calculate(i));
         }
         return bestCalculation;
@@ -69,7 +69,7 @@ public class Algorithm {
             qualifierList.add(new Qualifier(cheapestMaterialSellers.get(i).getSupplier_id(), fastestDeliveryingSuppliers.get(i).getSupplier_id(), qualifier));
         }
 
-        ArrayList<Qualifier> qualified = new ArrayList<Qualifier>(); //change names l8r
+        ArrayList<Qualifier> qualified = new ArrayList<Qualifier>();
 
         for (Qualifier q : qualifierList) {
             if (q.getSupplier_id_1() == q.getSupplier_id_2()) {
