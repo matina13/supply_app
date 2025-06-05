@@ -107,7 +107,7 @@ public class DataGetter {
                 int material_id = rs.getInt("material_id");
                 int quantity = rs.getInt("quantity");
                 int price = rs.getInt("price");
-                catalogue.add(new SupplierMaterialInfo(supplier_id, material_id, price, quantity));
+                catalogue.add(new SupplierMaterialInfo(supplier_id, material_id, getMaterialOrGoodName("material", material_id), price, quantity));
             }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
@@ -128,7 +128,7 @@ public class DataGetter {
                 int supplier_id = rs.getInt("supplier_id");
                 int price = getSupplierSellPrice(supplier_id, material_id);
                 int quantity = rs.getInt("quantity");
-                suppliers.add(new SupplierMaterialInfo(supplier_id, material_id, price, quantity));
+                suppliers.add(new SupplierMaterialInfo(supplier_id, material_id, getMaterialOrGoodName("material", material_id), price, quantity));
             }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());

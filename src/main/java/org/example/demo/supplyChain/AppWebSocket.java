@@ -138,10 +138,9 @@ public class AppWebSocket {
                 Gson g = new Gson();
 
                 dataToBeSent.put("inventory", dataGetter.getInventory(user_id));
-                dataToBeSent.put("transactions", dataGetter.getTransactions(user_id));
+                dataToBeSent.put("transactions_list", dataGetter.getTransactions(user_id));
                 dataToBeSent.put("all_suppliers", dataGetter.getSuppliers()); //why?
                 dataToBeSent.put("transit_list", dataGetter.getTransit(user_id));
-                //dataToBeSent.put("transactions_list", ); //why? afou stelnoume panw "transactions"
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
                 broadcast(json);
@@ -201,19 +200,11 @@ public class AppWebSocket {
         else if (j.get("get_supplier_materials") != null) {
             JsonObject supplierRequest = j.get("get_supplier_materials").getAsJsonObject();
             int supplier_id = supplierRequest.get("supplier_id").getAsInt();
-            ArrayList<SupplierMaterialInfo> catalogue = dataGetter.getSupplierCatalogue(supplier_id);
-            ArrayList<HashMap<String, Object>> materials = new ArrayList<>();
-
-            for (SupplierMaterialInfo info : catalogue) {
-                HashMap<String, Object> material = new HashMap<>();
-                material.put("material_id", info.getMaterial_id());
-                material.put("material_name", dataGetter.getMaterialOrGoodName("material", info.getMaterial_id()));
-                material.put("quantity", info.getQuantity());
-                material.put("price", info.getPrice());
-                material.put("supplier_id", supplier_id);
-                materials.add(material);
+            ArrayList<SupplierMaterialInfo> supplierCatalogue = dataGetter.getSupplierCatalogue(supplier_id);
+            for (SupplierMaterialInfo s : supplierCatalogue) {
+                System.out.println(s.getMaterial_id() + " " + s.getPrice());
             }
-            this.dataToBeSent.put("supplier_materials", materials);
+            this.dataToBeSent.put("supplier_materials", supplierCatalogue);
             this.dataToBeSent.put("selected_supplier_id", supplier_id);
             //this.dTBS_Clear_List.add("supplier_materials");
             //this.dTBS_Clear_List.add("selected_supplier_id");
