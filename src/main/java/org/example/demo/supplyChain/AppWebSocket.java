@@ -106,15 +106,12 @@ public class AppWebSocket {
             try {
                 client.sendMessage(msg);
             } catch (IOException e) {
-                //log.debug("Chat Error: Failed to send message to client", e);
                 if (connections.remove(client)) {
                     try {
                         client.session.close();
                     } catch (IOException e1) {
                         // Ignore
                     }
-                    //String message = String.format("* %s %s", client.nickname, "has been disconnected.");
-                    //broadcast(message);
                 }
             }
         }
@@ -214,7 +211,7 @@ public class AppWebSocket {
         }
 
         else if (j.get("start_algorithm") != null) {
-            JsonObject producableGoodId = j.get("producableGoodId").getAsJsonObject();
+            JsonElement producableGoodId = j.get("start_algorithm");
             ArrayList<Integer> materials_ids = dataGetter.getMaterialsNeededToProduceItem(producableGoodId.getAsInt());
             this.algorithm = new Algorithm(this.user_id, this.dataGetter, materials_ids);
             this.algorithmTrigger = true;

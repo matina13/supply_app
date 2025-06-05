@@ -539,6 +539,11 @@ function updateTransitTable(transitData) {
         tbody.appendChild(row);
     }
 }
+
+function upgradeToPlus() {
+
+}
+
 function startAlgorithm(producableGoodId) {
     // Send the JSON request
     const json = [{"start_algorithm": producableGoodId}];

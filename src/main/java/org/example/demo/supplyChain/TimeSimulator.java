@@ -60,6 +60,17 @@ public class TimeSimulator {
     }
 
     public int getMoney() {
+        try {
+            String sql = "SELECT money FROM UserData WHERE user_id = ?";
+            PreparedStatement stmt = this.db.prepareStatement(sql);
+            stmt.setInt(1, this.user_id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                this.money = rs.getInt("money");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return this.money;
     }
 
