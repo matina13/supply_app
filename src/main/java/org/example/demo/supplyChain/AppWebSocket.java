@@ -216,10 +216,12 @@ public class AppWebSocket {
         }
 
         else if (j.get("buy_from_algorithm") != null) {
-            JsonArray algo_data = j.get("start_algorithm").getAsJsonArray();
+            JsonArray algo_data = j.get("buy_from_algorithm").getAsJsonArray();
             for (JsonElement je : algo_data) {
-                //JsonObject jo = je.getAsJsonObject();
-                AlgoStruct[] a = new Gson().fromJson(je, AlgoStruct[].class);
+                System.out.println(je.getAsJsonObject());
+                AlgoStruct[] mat_idAnd_sup_id = new Gson().fromJson(je, AlgoStruct[].class);
+
+                //order with these, we couldn't finish last step on time
             }
 
         }
