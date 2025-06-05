@@ -148,19 +148,6 @@ public class LocationService {
         return result;
     }
 
-    public int[] getCoordinates(String countryCode) {
-        Country country = countries.get(countryCode);
-        if (country == null) {
-            throw new IllegalArgumentException("Unknown country code: " + countryCode);
-        }
-
-        Continent continent = continents.get(country.getContinentName());
-        if (continent == null) {
-            throw new IllegalStateException("Unknown continent: " + country.getContinentName());
-        }
-
-        return new int[]{continent.getX(), continent.getY()};
-    }
 
     public String getContinentDisplayName(String continentName) {
         // Java 11 compatible: Traditional if-else

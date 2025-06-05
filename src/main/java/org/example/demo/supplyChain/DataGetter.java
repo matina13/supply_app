@@ -98,7 +98,7 @@ public class DataGetter {
     public ArrayList<SupplierMaterialInfo> getSupplierCatalogue(int supplier_id) {
         ArrayList<SupplierMaterialInfo> catalogue = new ArrayList<SupplierMaterialInfo>();
         try {
-            String sql = "SELECT si.material_id, si.quantity, ssp.price FROM SuppliersInventory si JOIN SuppliersSellPrice ssp ON si.material_id = ssp.material_id WHERE si.supplier_id = ?";
+            String sql = "SELECT si.material_id, si.quantity, ssp.price FROM SuppliersInventory si JOIN SuppliersSellPrice ssp ON si.supplier_id = ssp.supplier_id AND si.material_id = ssp.material_id WHERE si.supplier_id = ?";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, supplier_id);
             ResultSet rs = stmt.executeQuery();

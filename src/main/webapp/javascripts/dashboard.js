@@ -301,11 +301,24 @@ function getSupplierMaterials() {
 function updateSupplierMaterialsTable(materials, supplierId) {
     const table = document.getElementById("supplierMaterialsTable");
     const tbody = table.querySelector('tbody');
+
+    // Store current input values before clearing the table
+    const currentValues = {};
+    const existingInputs = tbody.querySelectorAll('input[id^="buyQuantity_"]');
+    existingInputs.forEach(input => {
+        const materialId = input.id.replace('buyQuantity_', '');
+        currentValues[materialId] = input.value;
+    });
+
     tbody.innerHTML = '';
 
     if (materials && Array.isArray(materials) && materials.length > 0) {
         materials.forEach(material => {
             const row = document.createElement('tr');
+
+            // Use saved value if it exists, otherwise default to 1
+            const savedValue = currentValues[material.material_id] || 1;
+
             row.innerHTML = `
                 <td>${material.material_name || material.name || `Material ${material.material_id}`}</td>
                 <td>$${material.price || 0}</td>
@@ -316,7 +329,7 @@ function updateSupplierMaterialsTable(materials, supplierId) {
                            class="buy-quantity-input"
                            min="1"
                            max="${material.quantity || 0}"
-                           value="1"
+                           value="${savedValue}"
                            style="width: 80px; padding: 0.25rem;">
                 </td>
                 <td>
