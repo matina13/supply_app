@@ -1,6 +1,5 @@
-package org.example.demo.structs;
+package org.example.demo;
 
-import org.example.demo.structs.LocationService;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;

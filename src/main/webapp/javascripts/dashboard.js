@@ -63,6 +63,10 @@ webSocket.connect = (function(host) {
                 console.log('Auto-updating transit:', msg_JSON["data"][0]["transit_list"]);
                 updateTransitTable(msg_JSON["data"][0]["transit_list"]);
             }
+            if (msg_JSON["data"][0]["bestCalculation"] != null) {
+                console.log('Found bestCalculation:', msg_JSON["data"][0]["bestCalculation"]);
+                handleBestCalculation(msg_JSON["data"][0]["bestCalculation"], msg_JSON);
+            }
 
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
@@ -551,6 +555,112 @@ function startAlgorithm(producableGoodId) {
     if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
         webSocket.Socket.send(JSON.stringify(json));
         console.log('Sent algorithm request:', json);
+    } else {
+        alert('Connection not ready. Please try again.');
+    }
+}
+
+// Global variable to store last algorithm results
+let lastBestCalculation = null;
+
+function handleBestCalculation(bestCalculation, msg_JSON) {
+    console.log('Received bestCalculation:', bestCalculation);
+
+    // Store the last received data
+    lastBestCalculation = bestCalculation;
+
+    // Get the table body
+    const tableBody = document.querySelector('#algorithmResultsTable tbody');
+
+    // Clear existing rows
+    tableBody.innerHTML = '';
+
+    // Show the table
+    document.getElementById('algorithmResultsTable').style.display = 'table';
+
+    // Get suppliers and inventory data for name lookup
+    const suppliers = msg_JSON["data"][0]["all_suppliers"] || [];
+    const inventory = msg_JSON["data"][0]["inventory"] || [];
+
+    // Create lookup maps
+    const supplierNames = {};
+    suppliers.forEach(supplier => {
+        supplierNames[supplier.supplier_id] = supplier.name || `Supplier ${supplier.supplier_id}`;
+    });
+
+    const materialNames = {};
+    inventory.forEach(item => {
+        materialNames[item.id] = item.name || `Material ${item.id}`;
+    });
+
+    // Add rows for each result
+    bestCalculation.forEach((result, index) => {
+        for (const [materialId, supplierId] of Object.entries(result)) {
+            const row = document.createElement('tr');
+
+            // Get names or fallback to IDs
+            const materialName = materialNames[materialId] || `Material ${materialId}`;
+            const supplierName = supplierNames[supplierId] || `Supplier ${supplierId}`;
+
+            row.innerHTML = `
+                <td>Result ${index + 1}</td>
+                <td>${materialName}</td>
+                <td>${supplierName}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    });
+
+    // Show the confirm button
+    showConfirmButton();
+}
+
+function showConfirmButton() {
+    // Check if button already exists
+    let confirmBtn = document.getElementById('confirmAlgorithmBtn');
+
+    if (!confirmBtn) {
+        // Create the confirm button
+        confirmBtn = document.createElement('div');
+        confirmBtn.id = 'confirmAlgorithmBtn';
+        confirmBtn.innerHTML = `
+            <div style="margin-top: 1rem; text-align: center;">
+                <button onclick="confirmAlgorithmPurchase()" 
+                        style="padding: 0.75rem 1.5rem; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer;">
+                      Confirm & Buy from Algorithm
+                </button>
+            </div>
+        `;
+
+        // Insert after the algorithm results table
+        const table = document.getElementById('algorithmResultsTable');
+        table.parentNode.insertBefore(confirmBtn, table.nextSibling);
+    }
+
+    confirmBtn.style.display = 'block';
+}
+
+function confirmAlgorithmPurchase() {
+    if (!lastBestCalculation || lastBestCalculation.length === 0) {
+        alert('No algorithm results to confirm');
+        return;
+    }
+
+    // Create the JSON to send - just use the original bestCalculation data
+    const json = [{
+        "buy_from_algorithm": lastBestCalculation
+    }];
+
+    console.log('Sending buy_from_algorithm:', json);
+
+    if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
+        webSocket.Socket.send(JSON.stringify(json));
+
+        // Show success message
+        alert(`Purchasing materials from algorithm recommendations!`);
+
+        // Hide the confirm button after sending
+        document.getElementById('confirmAlgorithmBtn').style.display = 'none';
     } else {
         alert('Connection not ready. Please try again.');
     }

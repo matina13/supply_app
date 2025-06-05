@@ -117,7 +117,6 @@
                 <option value="">-- Choose a Supplier --</option>
                 <!-- Suppliers will be populated by JavaScript -->
             </select>
-            <button onclick="loadSuppliers()" style="margin-left: 0.5rem;">Refresh Suppliers</button>
         </div>
 
         <!-- Step 2: Show Selected Supplier's Materials -->
@@ -164,13 +163,6 @@
     <div class="card">
         <h3>Transaction History</h3>
 
-        <!-- Refresh button -->
-        <div style="margin-bottom: 1rem;">
-            <button onclick="loadTransactions()" style="padding: 0.5rem 1rem; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Refresh Transactions
-            </button>
-        </div>
-
         <!-- Transactions Table -->
         <table id="transactionsTable">
             <thead>
@@ -196,12 +188,6 @@
     <div class="card">
         <h3>Transit Status</h3>
 
-        <!-- Refresh button -->
-        <div style="margin-bottom: 1rem;">
-            <button onclick="loadTransit()" style="padding: 0.5rem 1rem; background-color: #6f42c1; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Refresh Transit
-            </button>
-        </div>
 
         <!-- Transit Table -->
         <table id="transitTable">
@@ -290,7 +276,22 @@
                 </td>
 
             </tr>
+
             <% } %>
+            </tbody>
+
+        </table>
+
+        <table id="algorithmResultsTable" style="display: none;">
+            <thead>
+            <tr>
+                <th>Result</th>
+                <th>Material</th>
+                <th>Best Supplier</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Rows will be added here -->
             </tbody>
         </table>
     </div>

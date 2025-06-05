@@ -1,4 +1,4 @@
-package org.example.demo.structs;
+package org.example.demo;
 
 
 import com.google.gson.Gson;
