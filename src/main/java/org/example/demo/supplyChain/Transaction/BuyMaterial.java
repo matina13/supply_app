@@ -90,8 +90,42 @@ public class BuyMaterial {
         }
     }
 
-    private void calculateDaysToTravel() {
+    private int calculateDaysToTravel(int user_id, int supplier_id) {
+        try {
+            String sql = "SELECT location_x, location_y FROM UserData WHERE user_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            ResultSet rs = stmt.executeQuery();
 
+            int producer_x = -10;
+            int producer_y = -10;
+
+            if (rs.next()) {
+                producer_x = rs.getInt("location_x");
+                producer_y = rs.getInt("location_y");
+            }
+
+            String sql2 = "SELECT location_x, location_y FROM Suppliers WHERE supplier_id = ?";
+            PreparedStatement stmt2 = DBUtil.getConnection().prepareStatement(sql2);
+            stmt2.setInt(1, supplier_id);
+            ResultSet rs2 = stmt2.executeQuery();
+
+            int supplier_x = -10;
+            int supplier_y = -10;
+
+            if (rs2.next()) {
+                supplier_x = rs2.getInt("location_x");
+                supplier_y = rs2.getInt("location_y");
+            }
+
+            int daysToTravel = TravelTimeCalculator.calculate(producer_x, producer_y, supplier_x, supplier_y);
+            return daysToTravel;
+
+        } catch(SQLException e){
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 4040404;
     }
 
     private int sendToTransit(int user_id, LocalDate date) {
@@ -115,7 +149,7 @@ public class BuyMaterial {
             stmt2.setInt(3, user_id);
             stmt2.setInt(4, order_id);
             stmt2.setDate(5, Date.valueOf(date));
-            stmt2.setDate(6, Date.valueOf(date.plusDays(15))); //Don't forget to make it properly l8r!!!!!!!!!!!!!!
+            stmt2.setDate(6, Date.valueOf(date.plusDays(calculateDaysToTravel(user_id, this.supplier_id)))); //Don't forget to make it properly l8r!!!!!!!!!!!!!!
             stmt2.setBoolean(7, false);
             stmt2.executeUpdate();
 
@@ -177,14 +211,35 @@ public class BuyMaterial {
         }
     }
 
-    private void addToMaterialToInventory(int user_id) {
+    private void addMaterialToInventory(int user_id) {
         try {
-            String sql = "UPDATE ProducerInventory SET quantity = quantity + ? WHERE user_id = ? AND material_id = ?";
-            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
-            stmt.setInt(1, this.quantity);
-            stmt.setInt(2, user_id);
-            stmt.setInt(3, this.material_id);
-            stmt.executeUpdate();
+            // Check if user already has this material in inventory
+            String checkSql = "SELECT COUNT(*) FROM ProducerInventory WHERE user_id = ? AND material_id = ? AND type = 'material'";
+            PreparedStatement checkStmt = DBUtil.getConnection().prepareStatement(checkSql);
+            checkStmt.setInt(1, user_id);
+            checkStmt.setInt(2, this.material_id);
+            ResultSet rs = checkStmt.executeQuery();
+
+            int exists = 0;
+            if (rs.next()) {
+                exists = rs.getInt(1);
+            }
+
+            if (exists == 0) { // doesn't exist - add new material entry
+                String insertSql = "INSERT INTO ProducerInventory (user_id, material_id, producableGoodId, quantity, type) VALUES (?, ?, NULL, ?, 'material')";
+                PreparedStatement insertStmt = DBUtil.getConnection().prepareStatement(insertSql);
+                insertStmt.setInt(1, user_id);
+                insertStmt.setInt(2, this.material_id);
+                insertStmt.setInt(3, this.quantity);
+                insertStmt.executeUpdate();
+            } else { // exists - update quantity
+                String updateSql = "UPDATE ProducerInventory SET quantity = quantity + ? WHERE user_id = ? AND material_id = ? AND type = 'material'";
+                PreparedStatement updateStmt = DBUtil.getConnection().prepareStatement(updateSql);
+                updateStmt.setInt(1, this.quantity);
+                updateStmt.setInt(2, user_id);
+                updateStmt.setInt(3, this.material_id);
+                updateStmt.executeUpdate();
+            }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
@@ -243,7 +298,7 @@ public class BuyMaterial {
             public void run() {
                 if (done.getDone()) {
                     createTransaction(transaction_id, "inbound", order_id, user_id, timeSim.getLocalDateObject());
-                    addToMaterialToInventory(user_id);
+                    addMaterialToInventory(user_id);
                     awaitTimer.cancel();
                     awaitTimer.purge();
                 }

@@ -76,7 +76,7 @@ public class DataGetter {
     public ArrayList<Supplier> getSuppliers() {
         ArrayList<Supplier> suppliers = new ArrayList<Supplier>();
         try {
-            String sql = "SELECT supplier_id, name, country FROM Suppliers";
+            String sql = "SELECT * FROM Suppliers";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
@@ -84,7 +84,9 @@ public class DataGetter {
                 int supplier_id = rs.getInt("supplier_id");
                 String name = rs.getString("name");
                 String country = rs.getString("country");
-                suppliers.add(new Supplier(supplier_id, name, country));
+                int location_x = rs.getInt("location_x");
+                int location_y = rs.getInt("location_y");
+                suppliers.add(new Supplier(supplier_id, name, country, location_x, location_y));
             }
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
@@ -228,6 +230,54 @@ public class DataGetter {
             e.printStackTrace();
         }
         return orders;
+    }
+
+    public ArrayList<HashMap<String, Object>> getTransit(int user_id) {
+        ArrayList<HashMap<String, Object>> transitList = new ArrayList<>();
+
+        try {
+            String sql = "SELECT * FROM Transit WHERE buyer_id = ? ORDER BY shipment_date DESC";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                HashMap<String, Object> transit = new HashMap<>();
+                transit.put("transaction_id", rs.getInt("transaction_id"));
+                transit.put("supplier_id", rs.getInt("supplier_id"));
+                transit.put("buyer_id", rs.getInt("buyer_id"));
+                transit.put("order_id", rs.getInt("order_id"));
+                transit.put("shipment_date", rs.getDate("shipment_date").toString());
+                transit.put("delivery_date", rs.getDate("delivery_date").toString());
+                transit.put("done", rs.getBoolean("done"));
+                transitList.add(transit);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching transit data: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return transitList;
+    }
+
+    public int[] getCurrentUserLocation(int user_id) {
+        try {
+            String sql = "SELECT location_x, location_y FROM UserData WHERE user_id = ?";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, user_id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int[] location = new int[2];
+                location[0] = rs.getInt("location_x");
+                location[1] = rs.getInt("location_y");
+                return location;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null; //should not happen
     }
 
 }

@@ -34,14 +34,36 @@ webSocket.connect = (function(host) {
             document.getElementById("money").innerText = msg_JSON["money"];
             updateInventoryTable(msg_JSON);
 
-            // Add this new part for production alerts
+            // Production alerts
             if (msg_JSON["data"][0]["alert_message"] != null) {
                 alert(msg_JSON["data"][0]["alert_message"]);
             }
 
-            if (msg_JSON["data"][0]["suppliers"] != null) {
-                updateSuppliersTable(msg_JSON);
+            //suppliers for dropdown
+            if (msg_JSON["data"][0]["all_suppliers"] != null) {
+                console.log('Auto-updating suppliers:', msg_JSON["data"][0]["all_suppliers"]);
+                populateSuppliersDropdown(msg_JSON["data"][0]["all_suppliers"]);
             }
+
+            // Materials for selected supplier
+            if (msg_JSON["data"][0]["supplier_materials"] != null) {
+                console.log('Found supplier_materials:', msg_JSON["data"][0]["supplier_materials"]);
+                const supplierId = msg_JSON["data"][0]["selected_supplier_id"];
+                updateSupplierMaterialsTable(msg_JSON["data"][0]["supplier_materials"], supplierId);
+            }
+
+            //Transactions list
+            if (msg_JSON["data"][0]["transactions_list"] != null) {
+                console.log('Auto-updating transactions:', msg_JSON["data"][0]["transactions_list"]);
+                updateTransactionsTable(msg_JSON["data"][0]["transactions_list"]);
+            }
+
+            // Transit list
+            if (msg_JSON["data"][0]["transit_list"] != null) {
+                console.log('Auto-updating transit:', msg_JSON["data"][0]["transit_list"]);
+                updateTransitTable(msg_JSON["data"][0]["transit_list"]);
+            }
+
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
         }
@@ -106,7 +128,6 @@ function selectSupplier(supplierId, materialId, supplierName, materialName, pric
     selectedPrice = price;
     selectedMaxQuantity = maxQuantity;
 
-    // Highlight selected row
     const rows = document.querySelectorAll('#suppliersTable tbody tr');
     rows.forEach(row => {
         row.classList.remove('selected-row');
@@ -122,55 +143,6 @@ function selectSupplier(supplierId, materialId, supplierName, materialName, pric
     document.getElementById('quantity').max = maxQuantity;
 }
 
-function updateSuppliersTable(msg_JSON) {
-    try {
-        //const table = document.getElementById("suppliersTable");
-        const table = document.getElementById("supplierSelect");
-        const tbody = table.querySelector('tbody');
-        tbody.innerHTML = '';
-
-        const suppliers = msg_JSON["data"]?.[0]?.["suppliers"];
-        if (suppliers && Array.isArray(suppliers)) {
-            suppliers.forEach(supplier => {
-                const row = document.createElement('tr');
-                row.className = 'clickable-row';
-                row.innerHTML = `
-                    <td>${supplier.supplier_name || supplier.supplier_id || 'Unknown Supplier'}</td>
-                    <td>$${supplier.price || 0}</td>
-                    <td>${supplier.quantity || 0}</td>
-                    <td>
-                        <button class="select-btn"
-                                onclick="selectSupplier(
-                                    ${supplier.supplier_id},
-                                    ${supplier.material_id},
-                                    '${supplier.supplier_name || supplier.supplier_id}',
-                                    '${supplier.material_name || supplier.material_id}',
-                                    ${supplier.price},
-                                    ${supplier.quantity},
-                                    event
-                                )">
-                            Select
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        } else {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="4" style="text-align: center; color: #999;">
-                    <em>No suppliers found for this material</em>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
-
-        // Don't hide buy section here anymore
-    } catch (error) {
-        console.error('Error updating suppliers table:', error);
-    }
-}
-
 function buyMaterial(supplier_id, material_id, quantity) {
     const json = [{
         "buy_material": {
@@ -181,16 +153,20 @@ function buyMaterial(supplier_id, material_id, quantity) {
     }];
     webSocket.Socket.send(JSON.stringify(json));
 
-    // Reset selection after purchase
-    document.getElementById('buySection').style.display = 'none';
-    document.getElementById('purchaseMessage').textContent = 'Purchase order sent!';
-    setTimeout(() => {
-        document.getElementById('purchaseMessage').textContent = '';
-    }, 3000);
+    // Show success message for new supplier management interface
+    const purchaseMessage = document.getElementById('purchaseMessage');
+    if (purchaseMessage) {
+        purchaseMessage.textContent = 'Purchase order sent!';
+        purchaseMessage.style.color = '#28a745';
+
+        // Hide confirmation section after 3 seconds
+        setTimeout(() => {
+            cancelPurchase();
+        }, 3000);
+    }
 }
 
 function produceGood(producableGoodId , quantityToProduce ) {
-
     const json = [{
         "produce_good": {
             "producableGoodId": producableGoodId,
@@ -199,8 +175,6 @@ function produceGood(producableGoodId , quantityToProduce ) {
     }];
     webSocket.Socket.send(JSON.stringify(json));
 }
-
-// Add this function to your dashboard.js file or in the script section of your JSP
 
 function produceSpecificGood(producableGoodId) {
     const quantityInput = document.getElementById(`quantity_${producableGoodId}`);
@@ -226,7 +200,7 @@ function produceSpecificGood(producableGoodId) {
     }
 }
 
-// Optional: Function to show production messages
+// Function to show production messages
 function showProductionMessage(message) {
     // Create a temporary message element
     const messageDiv = document.createElement('div');
@@ -260,7 +234,7 @@ let pendingPurchase = {
     material_name: ''
 };
 
-// Load all suppliers on page load or when refresh button is clicked
+// Load all suppliers
 function loadSuppliers() {
     // Check if WebSocket is ready before sending
     if (webSocket.Socket && webSocket.Socket.readyState === WebSocket.OPEN) {
@@ -273,9 +247,11 @@ function loadSuppliers() {
     }
 }
 
-// Populate suppliers dropdown (call this when you receive supplier data)
 function populateSuppliersDropdown(suppliers) {
     const supplierSelect = document.getElementById('supplierSelect');
+    const currentSelection = supplierSelect.value; // Preserve current selection
+
+    // Clear and repopulate
     supplierSelect.innerHTML = '<option value="">-- Choose a Supplier --</option>';
 
     if (suppliers && Array.isArray(suppliers)) {
@@ -284,6 +260,12 @@ function populateSuppliersDropdown(suppliers) {
             option.value = supplier.supplier_id;
             option.textContent = supplier.name || `Supplier ${supplier.supplier_id}`;
             option.dataset.supplierName = supplier.name || `Supplier ${supplier.supplier_id}`;
+
+            // Restore selection if it was previously selected
+            if (supplier.supplier_id.toString() === currentSelection) {
+                option.selected = true;
+            }
+
             supplierSelect.appendChild(option);
         });
     }
@@ -468,6 +450,81 @@ function initializeSuppliersWhenReady() {
         }
     };
     checkConnection();
+}
+
+//Update transactions table with data from server
+function updateTransactionsTable(transactions) {
+    const table = document.getElementById("transactionsTable");
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (transactions && Array.isArray(transactions) && transactions.length > 0) {
+        transactions.forEach(transaction => {
+            const row = document.createElement('tr');
+
+            // Format the date
+            const dateFinished = new Date(transaction.date_finished).toLocaleDateString();
+
+            row.innerHTML = `
+                <td>${transaction.transaction_id || 'N/A'}</td>
+                <td>${transaction.type || 'N/A'}</td>
+                <td>${transaction.order_id || 'N/A'}</td>
+                <td>${transaction.supplier_id || 'N/A'}</td>
+                <td>${dateFinished}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="5" style="text-align: center; color: #999; padding: 2rem;">
+                <em>No transactions found</em>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+
+//Missing updateTransitTable function
+function updateTransitTable(transitData) {
+    const table = document.getElementById("transitTable");
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (transitData && Array.isArray(transitData) && transitData.length > 0) {
+        transitData.forEach(transit => {
+            const row = document.createElement('tr');
+
+            // Format the dates
+            const shipmentDate = new Date(transit.shipment_date).toLocaleDateString();
+            const deliveryDate = new Date(transit.delivery_date).toLocaleDateString();
+
+            // Determine status and color
+            const isDone = transit.done === 1 || transit.done === true;
+            const status = isDone ? 'Delivered' : 'In Transit';
+            const statusColor = isDone ? '#28a745' : '#ffc107';
+
+            row.innerHTML = `
+                <td>${transit.transaction_id || 'N/A'}</td>
+                <td>${transit.supplier_id || 'N/A'}</td>
+                <td>${transit.order_id || 'N/A'}</td>
+                <td>${shipmentDate}</td>
+                <td>${deliveryDate}</td>
+                <td style="color: ${statusColor}; font-weight: bold;">
+                    ${status}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="6" style="text-align: center; color: #999; padding: 2rem;">
+                <em>No transit data found</em>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
 }
 
 // Call initializeSuppliersWhenReady when page loads instead of loadSuppliers directly

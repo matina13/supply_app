@@ -8,11 +8,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
+import org.example.demo.Algorithm;
 import org.example.demo.DBUtil;
 
 import com.google.gson.*;
 import org.example.demo.structs.Supplier;
 import org.example.demo.structs.SupplierMaterialInfo;
+import org.example.demo.structs.Transaction;
 import org.example.demo.supplyChain.Transaction.BuyMaterial;
 import org.example.demo.structs.Json;
 import org.example.demo.supplyChain.Transaction.Produce;
@@ -36,6 +38,7 @@ public class AppWebSocket {
     private HashMap<String, Object> dataToBeSent;
     private ArrayList<String> dTBS_Clear_List;
     private RandomnessSimulator randSim;
+    private Algorithm algorithm;
 
     @OnOpen
     public void start(Session session) {
@@ -136,6 +139,9 @@ public class AppWebSocket {
 
                 dataToBeSent.put("inventory", dataGetter.getInventory(user_id));
                 dataToBeSent.put("transactions", dataGetter.getTransactions(user_id));
+                dataToBeSent.put("all_suppliers", dataGetter.getSuppliers()); //why?
+                dataToBeSent.put("transit_list", dataGetter.getTransit(user_id));
+                //dataToBeSent.put("transactions_list", ); //why? afou stelnoume panw "transactions"
                 String json = g.toJson(new Json(timeSim.getDate(), timeSim.getMoney(), dataToBeSent));
 
                 broadcast(json);
@@ -186,7 +192,39 @@ public class AppWebSocket {
             this.dTBS_Clear_List.add("alert_message");
         }
         else if (j.get("get_suppliers") != null) {
-            this.dataToBeSent.put("suppliers", this.dataGetter.getSuppliers());
+            ArrayList<Supplier> suppliers = dataGetter.getSuppliers();
+
+            this.dataToBeSent.put("all_suppliers", suppliers);
+            this.dTBS_Clear_List.add("all_suppliers");
+        }
+
+        else if (j.get("get_supplier_materials") != null) {
+            JsonObject supplierRequest = j.get("get_supplier_materials").getAsJsonObject();
+            int supplier_id = supplierRequest.get("supplier_id").getAsInt();
+            ArrayList<SupplierMaterialInfo> catalogue = dataGetter.getSupplierCatalogue(supplier_id);
+            ArrayList<HashMap<String, Object>> materials = new ArrayList<>();
+
+            for (SupplierMaterialInfo info : catalogue) {
+                HashMap<String, Object> material = new HashMap<>();
+                material.put("material_id", info.getMaterial_id());
+                material.put("material_name", dataGetter.getMaterialOrGoodName("material", info.getMaterial_id()));
+                material.put("quantity", info.getQuantity());
+                material.put("price", info.getPrice());
+                material.put("supplier_id", supplier_id);
+                materials.add(material);
+            }
+            this.dataToBeSent.put("supplier_materials", materials);
+            this.dataToBeSent.put("selected_supplier_id", supplier_id);
+            //this.dTBS_Clear_List.add("supplier_materials");
+            //this.dTBS_Clear_List.add("selected_supplier_id");
+        }
+
+        else if (j.get("start_algorithm") != null) {
+            JsonObject materialIds = j.get("for_material_ids").getAsJsonObject();
+            //make them array, pass it, to the variable below
+            int[] materials_ids = new int[1];
+            this.algorithm = new Algorithm(this.user_id, this.dataGetter, materials_ids);
+            //this.algorithm.start();
         }
 
     }
