@@ -12,11 +12,8 @@ import org.example.demo.Algorithm;
 import org.example.demo.DBUtil;
 
 import com.google.gson.*;
-import org.example.demo.structs.Supplier;
-import org.example.demo.structs.SupplierMaterialInfo;
-import org.example.demo.structs.Transaction;
+import org.example.demo.structs.*;
 import org.example.demo.supplyChain.Transaction.BuyMaterial;
-import org.example.demo.structs.Json;
 import org.example.demo.supplyChain.Transaction.Produce;
 
 @ServerEndpoint(value = "/appSocket")
@@ -129,7 +126,8 @@ public class AppWebSocket {
             public void run() {
                 timeSim.incrementDate();
                 if (days == 5) {
-                    randSim.simulate();
+                    randSim.simulatePrices();
+                    randSim.simulateSupplierRestocking();
                     days = 0;
                 }
                 else days++;
@@ -215,6 +213,15 @@ public class AppWebSocket {
             ArrayList<Integer> materials_ids = dataGetter.getMaterialsNeededToProduceItem(producableGoodId.getAsInt());
             this.algorithm = new Algorithm(this.user_id, this.dataGetter, materials_ids);
             this.algorithmTrigger = true;
+        }
+
+        else if (j.get("buy_from_algorithm") != null) {
+            JsonArray algo_data = j.get("start_algorithm").getAsJsonArray();
+            for (JsonElement je : algo_data) {
+                //JsonObject jo = je.getAsJsonObject();
+                AlgoStruct[] a = new Gson().fromJson(je, AlgoStruct[].class);
+            }
+
         }
     }
 

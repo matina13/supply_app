@@ -38,7 +38,7 @@ public class RandomnessSimulator {
         }
     }
 
-    public void simulate() {
+    public void simulatePrices() {
         int priceFluctuation = ThreadLocalRandom.current().nextInt(-5,6); //price fluctuation from -5 to 5
         int randomSupplier = ThreadLocalRandom.current().nextInt(1, this.suppliersList.size() + 1);
         int randomMaterial = ThreadLocalRandom.current().nextInt(1, this.materialsList.size() + 1);
@@ -46,11 +46,35 @@ public class RandomnessSimulator {
         updateSupplierPrices(priceFluctuation, randomSupplier, randomMaterial);
     }
 
+    public void simulateSupplierRestocking() {
+        int goodFluctuation = ThreadLocalRandom.current().nextInt(0,6);
+        int randomSupplier = ThreadLocalRandom.current().nextInt(1, this.suppliersList.size() + 1);
+        int randomMaterial = ThreadLocalRandom.current().nextInt(1, this.materialsList.size() + 1);
+
+        updateSupplierInventory(goodFluctuation, randomSupplier, randomMaterial);
+    }
+
     private void updateSupplierPrices(int priceFluctuation, int supplier_id, int material_id) {
         try {
             String sql = "UPDATE SuppliersSellPrice SET price = GREATEST(price + ?, 1) WHERE supplier_id = ? AND material_id = ? ";
             PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
             stmt.setInt(1, priceFluctuation);
+            stmt.setInt(2, supplier_id);
+            stmt.setInt(3, material_id);
+            stmt.executeUpdate();
+
+
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void updateSupplierInventory(int goodFluctuation, int supplier_id, int material_id) {
+        try {
+            String sql = "UPDATE SuppliersInventory SET quantity = quantity + ? WHERE supplier_id = ? AND material_id = ? ";
+            PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
+            stmt.setInt(1, goodFluctuation);
             stmt.setInt(2, supplier_id);
             stmt.setInt(3, material_id);
             stmt.executeUpdate();

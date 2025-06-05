@@ -61,10 +61,9 @@ public class BuyMaterial {
     private boolean checkAndUpdateMoney(int user_id, int money, int moneyToBeSpent) {
         if (money >= moneyToBeSpent) {
             try {
-                int newMoney = money - moneyToBeSpent;
-                String sql = "UPDATE UserData SET money = ? WHERE user_id = ?";
+                String sql = "UPDATE UserData SET money = money - ? WHERE user_id = ?";
                 PreparedStatement stmt = DBUtil.getConnection().prepareStatement(sql);
-                stmt.setInt(1, newMoney);
+                stmt.setInt(1, moneyToBeSpent);
                 stmt.setInt(2, user_id);
                 stmt.executeUpdate();
                 return true;
